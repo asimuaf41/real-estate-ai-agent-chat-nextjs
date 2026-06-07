@@ -5,22 +5,34 @@ import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 type MessageRole = "user" | "assistant";
 
+type ToolEvent = {
+  type: "tool_use" | "tool_result";
+  tool: string;
+  input?: Record<string, unknown>;
+  result?: Record<string, unknown>;
+};
+
 type ChatMessage = {
   role: MessageRole;
   content: string;
+  toolEvents?: ToolEvent[];
 };
 
 type StreamEvent = {
   text?: string;
   done?: boolean;
   error?: string;
+  type?: "tool_use" | "tool_result";
+  tool?: string;
+  input?: Record<string, unknown>;
+  result?: Record<string, unknown>;
 };
 
 const quickPrompts = [
-  "Show me 3 modern apartments under $500k in downtown.",
-  "Find family-friendly homes with a backyard near top schools.",
-  "Compare two-bedroom condos with low HOA fees.",
-  "Give me an investment property analysis for rental yield.",
+  "What is the weather in Dubai right now?",
+  "Check the weather in Lahore and save it as a report.",
+  "Show me all my saved weather reports.",
+  "Compare: get weather for Atlanta and save the report.",
 ];
 
 function TypingDots() {
@@ -36,7 +48,85 @@ function TypingDots() {
   );
 }
 
-export default function Home() {
+function WeatherResultCard({ result }: { result: Record<string, unknown> }) {
+  return (
+    <div className="mt-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+      <p className="font-semibold">
+        {String(result.city ?? "City")}
+        {result.country ? `, ${String(result.country)}` : ""}
+      </p>
+      <p className="mt-1 capitalize">{String(result.condition ?? "")}</p>
+      <p className="mt-1">
+        {String(result.temperature ?? "")} · feels like{" "}
+        {String(result.feels_like ?? "")}
+      </p>
+      <p className="mt-1 text-sky-700">
+        Humidity {String(result.humidity ?? "")} · Wind{" "}
+        {String(result.wind ?? "")}
+      </p>
+    </div>
+  );
+}
+
+function ToolEventList({ events }: { events: ToolEvent[] }) {
+  if (events.length === 0) return null;
+
+  return (
+    <div className="mt-2 space-y-2">
+      {events.map((event, index) => {
+        if (event.type === "tool_use") {
+          return (
+            <p
+              key={`tool-use-${index}`}
+              className="text-xs font-medium text-violet-600"
+            >
+              Using tool: {event.tool}
+              {event.input?.city ? ` (${String(event.input.city)})` : ""}
+            </p>
+          );
+        }
+
+        if (event.tool === "get_weather" && event.result) {
+          return (
+            <WeatherResultCard
+              key={`tool-result-${index}`}
+              result={event.result}
+            />
+          );
+        }
+
+        if (event.tool === "save_weather_report" && event.result) {
+          return (
+            <p
+              key={`tool-result-${index}`}
+              className="text-xs font-medium text-emerald-600"
+            >
+              {String(event.result.message ?? "Report saved")}
+            </p>
+          );
+        }
+
+        if (event.tool === "get_weather_reports" && event.result) {
+          const count = Number(event.result.count ?? 0);
+          return (
+            <p
+              key={`tool-result-${index}`}
+              className="text-xs font-medium text-amber-700"
+            >
+              {count === 0
+                ? "No saved weather reports yet."
+                : `Loaded ${count} saved weather report${count === 1 ? "" : "s"}.`}
+            </p>
+          );
+        }
+
+        return null;
+      })}
+    </div>
+  );
+}
+
+export default function WeatherAssistantPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -50,7 +140,7 @@ export default function Home() {
   const appendAssistantChunk = (chunkText: string) => {
     setMessages((previous) => {
       if (previous.length === 0) {
-        return [{ role: "assistant", content: chunkText }];
+        return [{ role: "assistant", content: chunkText, toolEvents: [] }];
       }
 
       const updated = [...previous];
@@ -65,7 +155,26 @@ export default function Home() {
         return updated;
       }
 
-      updated.push({ role: "assistant", content: chunkText });
+      updated.push({ role: "assistant", content: chunkText, toolEvents: [] });
+      return updated;
+    });
+  };
+
+  const appendToolEvent = (event: ToolEvent) => {
+    setMessages((previous) => {
+      const updated = [...previous];
+      const lastIndex = updated.length - 1;
+      const last = updated[lastIndex];
+
+      if (last?.role === "assistant") {
+        updated[lastIndex] = {
+          ...last,
+          toolEvents: [...(last.toolEvents ?? []), event],
+        };
+        return updated;
+      }
+
+      updated.push({ role: "assistant", content: "", toolEvents: [event] });
       return updated;
     });
   };
@@ -75,18 +184,21 @@ export default function Home() {
     if (!nextContent || isStreaming) return;
 
     const userMessage: ChatMessage = { role: "user", content: nextContent };
-    const updatedMessages = [...messages, userMessage];
 
     setErrorMessage("");
-    setMessages([...updatedMessages, { role: "assistant", content: "" }]);
+    setMessages((previous) => [
+      ...previous,
+      userMessage,
+      { role: "assistant", content: "", toolEvents: [] },
+    ]);
     setInput("");
     setIsStreaming(true);
 
     try {
-      const response = await fetch("http://localhost:3001/api/chat", {
+      const response = await fetch("http://localhost:3001/api/chat/weather", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ message: nextContent }),
       });
 
       if (!response.ok) {
@@ -128,6 +240,24 @@ export default function Home() {
               continue;
             }
 
+            if (data.type === "tool_use" && data.tool) {
+              appendToolEvent({
+                type: "tool_use",
+                tool: data.tool,
+                input: data.input,
+              });
+              continue;
+            }
+
+            if (data.type === "tool_result" && data.tool) {
+              appendToolEvent({
+                type: "tool_result",
+                tool: data.tool,
+                result: data.result,
+              });
+              continue;
+            }
+
             if (data.text) {
               appendAssistantChunk(data.text);
             }
@@ -139,7 +269,7 @@ export default function Home() {
     } catch (error) {
       console.error("Stream error:", error);
       setErrorMessage(
-        "Could not reach your AI server. Check if port 3001 is running.",
+        "Could not reach the weather server. Check if port 3001 is running.",
       );
       setMessages((previous) => {
         const updated = [...previous];
@@ -149,6 +279,7 @@ export default function Home() {
             role: "assistant",
             content:
               "I hit a connection issue while streaming. Please try again.",
+            toolEvents: last.toolEvents,
           };
         }
         return updated;
@@ -173,27 +304,26 @@ export default function Home() {
   const emptyState = messages.length === 0;
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-100 via-white to-slate-100 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-b from-indigo-100 via-white to-violet-100 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/80 shadow-2xl backdrop-blur">
-        <header className="border-b border-slate-200/80 bg-linear-to-r from-sky-900 via-sky-800 to-cyan-700 p-5 text-white">
+        <header className="border-b border-slate-200/80 bg-linear-to-r from-indigo-900 via-violet-800 to-purple-700 p-5 text-white">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100/90">
-                Real Estate AI Assistant
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-100/90">
+                Weather AI Assistant
               </p>
               <h1 className="mt-1 text-xl font-semibold sm:text-2xl">
-                Property Concierge Chat
+                Live Weather & Reports
               </h1>
-              <p className="mt-1 text-sm text-cyan-100/90">
-                Ask for listings, comparisons, area insights, or investment
-                guidance.
+              <p className="mt-1 text-sm text-violet-100/90">
+                Ask for live weather, save reports, or retrieve saved reports.
               </p>
             </div>
             <Link
-              href="/weather"
+              href="/"
               className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-medium text-white transition hover:bg-white/20"
             >
-              Weather Assistant
+              Weather Chat
             </Link>
           </div>
         </header>
@@ -204,11 +334,11 @@ export default function Home() {
               <section className="flex h-full flex-col items-center justify-center">
                 <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white/95 p-8 text-center shadow-sm">
                   <h2 className="text-2xl font-semibold text-slate-900">
-                    Find the perfect property faster
+                    Check weather anywhere
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Start typing your own question or tap one of these smart
-                    prompts.
+                    Get live conditions, save weather reports, or list
+                    everything you have saved.
                   </p>
                   <div className="mt-6 grid gap-3 sm:grid-cols-2">
                     {quickPrompts.map((prompt) => (
@@ -217,7 +347,7 @@ export default function Home() {
                         type="button"
                         onClick={() => void sendMessage(prompt)}
                         disabled={isStreaming}
-                        className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-700 transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-700 transition hover:-translate-y-0.5 hover:border-violet-300 hover:bg-violet-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {prompt}
                       </button>
@@ -240,21 +370,25 @@ export default function Home() {
                       className={[
                         "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm sm:max-w-[75%]",
                         isUser
-                          ? "rounded-br-md bg-linear-to-br from-sky-600 to-cyan-500 text-white"
+                          ? "rounded-br-md bg-linear-to-br from-indigo-600 to-violet-500 text-white"
                           : "rounded-bl-md border border-slate-200 bg-white text-slate-800",
                       ].join(" ")}
                     >
+                      {!isUser && message.toolEvents ? (
+                        <ToolEventList events={message.toolEvents} />
+                      ) : null}
+
                       {message.content || isLastAssistantStreaming ? (
                         <p className="whitespace-pre-wrap">
                           {message.content}
                           {isLastAssistantStreaming ? <TypingDots /> : null}
                         </p>
-                      ) : (
+                      ) : !message.toolEvents?.length ? (
                         <div className="space-y-2 py-1">
                           <div className="h-3 w-40 animate-pulse rounded bg-slate-200" />
                           <div className="h-3 w-28 animate-pulse rounded bg-slate-200" />
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 );
@@ -272,7 +406,7 @@ export default function Home() {
                     type="button"
                     onClick={() => setInput(prompt)}
                     disabled={isStreaming}
-                    className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-violet-300 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {prompt}
                   </button>
@@ -285,15 +419,15 @@ export default function Home() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about property prices, nearby schools, investment ROI..."
+                placeholder="Ask about weather in any city, save a report, or list saved reports..."
                 disabled={isStreaming}
                 rows={2}
-                className="max-h-40 min-h-[56px] flex-1 resize-y rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="max-h-40 min-h-[56px] flex-1 resize-y rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-slate-50"
               />
               <button
                 type="submit"
                 disabled={isStreaming || !input.trim()}
-                className="inline-flex h-14 items-center justify-center rounded-2xl bg-linear-to-r from-sky-600 to-cyan-500 px-6 text-sm font-semibold text-white shadow-lg shadow-cyan-200/80 transition hover:-translate-y-0.5 hover:from-sky-700 hover:to-cyan-600 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-14 items-center justify-center rounded-2xl bg-linear-to-r from-indigo-600 to-violet-500 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-200/80 transition hover:-translate-y-0.5 hover:from-indigo-700 hover:to-violet-600 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isStreaming ? "Streaming..." : "Send"}
               </button>
