@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Agent Chat",
-  description: "Real estate and weather AI assistants",
+  title: "AI Agent Workspace",
+  description: "Premium B2B assistants for research, real estate, and weather",
 };
 
 export default function RootLayout({
