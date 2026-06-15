@@ -109,6 +109,7 @@ type ChatInputProps = {
   placeholder: string;
   submitLabel: string;
   streamingLabel: string;
+  stopLabel: string;
   theme: AssistantConfig["theme"];
   quickPrompts: string[];
   showQuickPrompts: boolean;
@@ -116,6 +117,7 @@ type ChatInputProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onPromptFill: (prompt: string) => void;
+  onStop: () => void;
 };
 
 export function ChatInput({
@@ -124,6 +126,7 @@ export function ChatInput({
   placeholder,
   submitLabel,
   streamingLabel,
+  stopLabel,
   theme,
   quickPrompts,
   showQuickPrompts,
@@ -131,6 +134,7 @@ export function ChatInput({
   onSubmit,
   onKeyDown,
   onPromptFill,
+  onStop,
 }: ChatInputProps) {
   return (
     <section className="space-y-3 border-t border-white/10 pt-4">
@@ -160,13 +164,23 @@ export function ChatInput({
           rows={2}
           className={`max-h-40 min-h-[56px] flex-1 resize-y rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-60 ${theme.inputFocus}`}
         />
-        <button
-          type="submit"
-          disabled={isStreaming || !input.trim()}
-          className={`inline-flex h-14 items-center justify-center rounded-2xl bg-linear-to-r px-6 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 ${theme.accentGradient} ${theme.accentShadow}`}
-        >
-          {isStreaming ? streamingLabel : submitLabel}
-        </button>
+        {isStreaming ? (
+          <button
+            type="button"
+            onClick={onStop}
+            className="inline-flex h-14 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 px-6 text-sm font-semibold text-rose-200 shadow-lg transition hover:-translate-y-0.5 hover:bg-rose-500/25"
+          >
+            {stopLabel}
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            className={`inline-flex h-14 items-center justify-center rounded-2xl bg-linear-to-r px-6 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 ${theme.accentGradient} ${theme.accentShadow}`}
+          >
+            {submitLabel}
+          </button>
+        )}
       </form>
     </section>
   );
@@ -183,6 +197,8 @@ type ChatShellProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onPromptSelect: (prompt: string) => void;
+  onStop: () => void;
+  beforeMessages?: ReactNode;
   renderToolEvents?: (events: ChatMessage["toolEvents"]) => ReactNode;
 };
 
@@ -197,6 +213,8 @@ export function ChatShell({
   onSubmit,
   onKeyDown,
   onPromptSelect,
+  onStop,
+  beforeMessages,
   renderToolEvents,
 }: ChatShellProps) {
   const { theme } = config;
@@ -225,6 +243,7 @@ export function ChatShell({
 
         <main className="flex flex-1 flex-col overflow-hidden p-4 sm:p-6">
           <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+            {beforeMessages}
             <ChatMessageList
               messages={messages}
               isStreaming={isStreaming}
@@ -244,6 +263,7 @@ export function ChatShell({
             placeholder={config.placeholder}
             submitLabel={config.submitLabel}
             streamingLabel={config.streamingLabel}
+            stopLabel="Stop"
             theme={theme}
             quickPrompts={config.quickPrompts}
             showQuickPrompts={messages.length > 0}
@@ -251,6 +271,7 @@ export function ChatShell({
             onSubmit={onSubmit}
             onKeyDown={onKeyDown}
             onPromptFill={onInputChange}
+            onStop={onStop}
           />
 
           {error ? <p className="text-xs text-rose-400">{error}</p> : null}

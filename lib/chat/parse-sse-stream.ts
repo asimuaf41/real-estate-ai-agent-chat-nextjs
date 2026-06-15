@@ -2,13 +2,24 @@ import type { StreamEvent } from "./types";
 
 export async function* readSseStream(
   body: ReadableStream<Uint8Array>,
+  signal?: AbortSignal,
 ): AsyncGenerator<StreamEvent> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
+  const abortHandler = () => {
+    void reader.cancel();
+  };
+
+  signal?.addEventListener("abort", abortHandler);
+
   try {
     while (true) {
+      if (signal?.aborted) {
+        return;
+      }
+
       const { done, value } = await reader.read();
       if (done) break;
 
@@ -27,6 +38,7 @@ export async function* readSseStream(
       }
     }
   } finally {
+    signal?.removeEventListener("abort", abortHandler);
     reader.releaseLock();
   }
 }

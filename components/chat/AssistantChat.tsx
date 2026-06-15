@@ -40,6 +40,7 @@ export function AssistantChat({ config, toolRenderer }: AssistantChatProps) {
     error,
     bottomRef,
     sendMessage,
+    stopStream,
     handleSubmit,
     handleKeyDown,
   } = useChatStream({
@@ -61,6 +62,7 @@ export function AssistantChat({ config, toolRenderer }: AssistantChatProps) {
       onSubmit={handleSubmit}
       onKeyDown={handleKeyDown}
       onPromptSelect={(prompt) => void sendMessage(prompt)}
+      onStop={stopStream}
       renderToolEvents={(events) => renderToolEvents(toolRenderer, events)}
     />
   );

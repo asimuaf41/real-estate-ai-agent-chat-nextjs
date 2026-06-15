@@ -51,14 +51,50 @@ export function WebSearchToolEvents({ events }: { events: ToolEvent[] }) {
       {events.map((event, index) => {
         if (event.type === "tool_use") {
           const detail =
-            event.input?.query ?? event.input?.url ?? event.input?.filename;
+            event.input?.query ??
+            event.input?.url ??
+            event.input?.filename ??
+            event.input?.content;
           return (
             <p
               key={`tool-use-${index}`}
               className="text-[11px] font-medium uppercase tracking-wide text-amber-300/80"
             >
               Running {event.tool}
-              {detail ? ` · ${String(detail)}` : ""}
+              {detail ? ` · ${String(detail).slice(0, 80)}` : ""}
+            </p>
+          );
+        }
+
+        if (event.tool === "save_memory" && event.result) {
+          const failed = event.result.success === false || event.result.error;
+          return (
+            <p
+              key={`tool-result-${index}`}
+              className={`text-xs ${failed ? "text-rose-300" : "text-emerald-300"}`}
+            >
+              {failed
+                ? String(event.result.error ?? "Failed to save memory")
+                : String(event.result.message ?? "Memory saved")}
+            </p>
+          );
+        }
+
+        if (event.tool === "search_memory" && event.result) {
+          const found = Number(event.result.found ?? 0);
+          return (
+            <p key={`tool-result-${index}`} className="text-xs text-sky-300">
+              {found === 0
+                ? "No matching memories found."
+                : `Found ${found} relevant ${found === 1 ? "memory" : "memories"}.`}
+            </p>
+          );
+        }
+
+        if (event.tool === "delete_memory" && event.result) {
+          return (
+            <p key={`tool-result-${index}`} className="text-xs text-rose-300">
+              {String(event.result.message ?? "Memory deleted")}
             </p>
           );
         }

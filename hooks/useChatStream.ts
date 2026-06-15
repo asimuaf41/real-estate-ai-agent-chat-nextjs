@@ -2,6 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { readSseStream } from "@/lib/chat/parse-sse-stream";
+import { sanitizeChatMessages } from "@/lib/chat/sanitize-messages";
 import type { ChatMessage, RequestMode, StreamEvent, ToolEvent } from "@/lib/chat/types";
 
 type UseChatStreamOptions = {
@@ -9,6 +10,8 @@ type UseChatStreamOptions = {
   requestMode: RequestMode;
   supportsTools: boolean;
   errorMessage: string;
+  requestExtras?: Record<string, unknown>;
+  onComplete?: () => void;
 };
 
 function createAssistantMessage(supportsTools: boolean): ChatMessage {
@@ -21,12 +24,27 @@ function buildRequestBody(
   requestMode: RequestMode,
   content: string,
   messages: ChatMessage[],
+  requestExtras: Record<string, unknown> = {},
 ) {
   if (requestMode === "messages") {
-    return { messages: [...messages, { role: "user" as const, content }] };
+    return {
+      ...requestExtras,
+      messages: [
+        ...sanitizeChatMessages(messages),
+        { role: "user" as const, content },
+      ],
+    };
   }
 
-  return { message: content };
+  return { ...requestExtras, message: content };
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 export function useChatStream({
@@ -34,12 +52,15 @@ export function useChatStream({
   requestMode,
   supportsTools,
   errorMessage,
+  requestExtras = {},
+  onComplete,
 }: UseChatStreamOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -120,12 +141,20 @@ export function useChatStream({
     [appendAssistantChunk, appendToolEvent],
   );
 
+  const stopStream = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsStreaming(false);
+  }, []);
+
   const sendMessage = useCallback(
     async (messageOverride?: string) => {
       const nextContent = (messageOverride ?? input).trim();
       if (!nextContent || isStreaming) return;
 
       const userMessage: ChatMessage = { role: "user", content: nextContent };
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
 
       setError("");
       setMessages((previous) => [
@@ -141,24 +170,40 @@ export function useChatStream({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(
-            buildRequestBody(requestMode, nextContent, messages),
+            buildRequestBody(requestMode, nextContent, messages, requestExtras),
           ),
+          signal: abortController.signal,
         });
 
         if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
+          const errorBody = await response.text();
+          throw new Error(
+            errorBody || `Request failed with status ${response.status}`,
+          );
         }
 
         if (!response.body) {
           throw new Error("No stream received from API.");
         }
 
-        for await (const event of readSseStream(response.body)) {
+        for await (const event of readSseStream(
+          response.body,
+          abortController.signal,
+        )) {
           handleStreamEvent(event);
         }
+
+        if (!abortController.signal.aborted) {
+          onComplete?.();
+        }
       } catch (streamError) {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         console.error("Stream error:", streamError);
-        setError(errorMessage);
+        const resolvedError = getErrorMessage(streamError, errorMessage);
+        setError(resolvedError);
         setMessages((previous) => {
           const updated = [...previous];
           const last = updated[updated.length - 1];
@@ -166,14 +211,16 @@ export function useChatStream({
           if (last?.role === "assistant" && !last.content.trim()) {
             updated[updated.length - 1] = {
               ...last,
-              content:
-                "I hit a connection issue while streaming. Please try again.",
+              content: resolvedError,
             };
           }
 
           return updated;
         });
       } finally {
+        if (abortControllerRef.current === abortController) {
+          abortControllerRef.current = null;
+        }
         setIsStreaming(false);
       }
     },
@@ -185,7 +232,9 @@ export function useChatStream({
       isStreaming,
       messages,
       requestMode,
+      requestExtras,
       supportsTools,
+      onComplete,
     ],
   );
 
@@ -215,6 +264,7 @@ export function useChatStream({
     error,
     bottomRef,
     sendMessage,
+    stopStream,
     handleSubmit,
     handleKeyDown,
     isEmpty: messages.length === 0,
