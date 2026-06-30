@@ -1,6 +1,5 @@
+import { apiEndpoints } from "@/lib/api";
 import type { AssistantConfig } from "@/lib/chat/types";
-
-const API_BASE = "http://localhost:3001/api/chat";
 
 export const webSearchAssistant: AssistantConfig = {
   id: "web-search",
@@ -14,7 +13,7 @@ export const webSearchAssistant: AssistantConfig = {
     "Research a topic, find videos, read articles, or save a report...",
   submitLabel: "Send",
   streamingLabel: "Researching...",
-  apiUrl: `${API_BASE}/web-search`,
+  apiUrl: apiEndpoints.webSearchChat,
   requestMode: "messages",
   supportsTools: true,
   errorMessage:
@@ -50,24 +49,24 @@ export const realEstateAssistant: AssistantConfig = {
   id: "real-estate",
   path: "/real-estate",
   label: "Real Estate",
-  eyebrow: "Property Intelligence",
+  eyebrow: "Property Intelligence (RAG)",
   title: "Real Estate Assistant",
   description:
-    "Explore listings, compare neighborhoods, and get investment guidance for smarter property decisions.",
+    "Ask questions about the Atlanta property database. Answers cite indexed listings retrieved with vector search.",
   placeholder:
-    "Ask about property prices, nearby schools, investment ROI...",
-  submitLabel: "Send",
-  streamingLabel: "Streaming...",
-  apiUrl: API_BASE,
+    "Ask about Buckhead listings, prices under $400k, pools, schools...",
+  submitLabel: "Ask",
+  streamingLabel: "Retrieving...",
+  apiUrl: apiEndpoints.realEstateChat,
   requestMode: "messages",
-  supportsTools: false,
+  supportsTools: true,
   errorMessage:
-    "Could not reach your AI server. Check if port 3001 is running.",
+    "Could not reach the real estate server. Check if port 3001 is running.",
   quickPrompts: [
-    "Show me 3 modern apartments under $500k in downtown.",
-    "Find family-friendly homes with a backyard near top schools.",
-    "Compare two-bedroom condos with low HOA fees.",
-    "Give me an investment property analysis for rental yield.",
+    "What properties do you have in Buckhead?",
+    "I have a budget of $400,000, what can I afford?",
+    "Do you have anything with a pool?",
+    "Tell me about properties built after 2015.",
   ],
   theme: {
     pageBackground:
@@ -102,7 +101,7 @@ export const weatherAssistant: AssistantConfig = {
     "Ask about weather in any city, save a report, or list saved reports...",
   submitLabel: "Send",
   streamingLabel: "Streaming...",
-  apiUrl: `${API_BASE}/weather`,
+  apiUrl: apiEndpoints.weatherChat,
   requestMode: "message",
   supportsTools: true,
   errorMessage:
@@ -134,8 +133,54 @@ export const weatherAssistant: AssistantConfig = {
   },
 };
 
+export const multiAgentAssistant: AssistantConfig = {
+  id: "multi-agent",
+  path: "/multi-agent",
+  label: "Multi-Agent",
+  eyebrow: "Orchestrated Intelligence",
+  title: "Multi-Agent Research Desk",
+  description:
+    "An orchestrator coordinates 5 specialists — preferences, web research, property database, analysis, and report writing — to deliver a personalized, client-ready report.",
+  placeholder:
+    "e.g. Research the Atlanta market, analyze our top 5 properties, write a report, and email it to the client...",
+  submitLabel: "Run Agents",
+  streamingLabel: "Coordinating agents...",
+  apiUrl: apiEndpoints.multiAgentChat,
+  requestMode: "messages",
+  supportsTools: true,
+  errorMessage:
+    "Could not reach the multi-agent server. Check if port 3001 is running.",
+  quickPrompts: [
+    "Research the Atlanta real estate market, analyze the top 5 properties from our database, write a professional report, and email it to the client.",
+    "Find family-friendly homes under $450k, analyze them against current market trends, and write a personalized report.",
+    "Compare Buckhead vs Midtown investment potential using market data and our listings.",
+    "Build an investment report for properties with a pool and email it.",
+  ],
+  theme: {
+    pageBackground:
+      "bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_40%),linear-gradient(180deg,#070b14_0%,#0b1220_45%,#070b14_100%)]",
+    shellBorder: "border-emerald-500/15",
+    headerBackground:
+      "bg-linear-to-r from-[#08140f] via-[#101820] to-[#08180f] border-b border-white/10",
+    headerEyebrow: "text-emerald-300/80",
+    headerDescription: "text-zinc-400",
+    accentText: "text-emerald-300",
+    accentBorder: "border-emerald-500/30",
+    accentRing: "focus:ring-emerald-500/20 focus:border-emerald-400/50",
+    accentGradient:
+      "from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400",
+    accentShadow: "shadow-emerald-500/20",
+    userBubble: "bg-linear-to-br from-emerald-600 to-teal-600 text-white",
+    assistantBubble: "border border-white/10 bg-zinc-900/80 text-zinc-100",
+    emptyStateHover: "hover:border-emerald-500/30 hover:bg-emerald-500/5",
+    chipHover: "hover:border-emerald-500/30 hover:text-emerald-200",
+    inputFocus: "focus:ring-emerald-500/20 focus:border-emerald-400/40",
+  },
+};
+
 export const assistants = [
   webSearchAssistant,
   realEstateAssistant,
   weatherAssistant,
+  multiAgentAssistant,
 ] as const;

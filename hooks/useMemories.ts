@@ -1,44 +1,68 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { MemoryItem, MemoriesResponse } from "@/lib/chat/memory-types";
+import { apiEndpoints } from "@/lib/api";
+import type { MemoriesResponse, MemoryItem } from "@/lib/chat/memory-types";
 
 const DEFAULT_USER_ID = "asim-ali-001";
-const MEMORIES_API = "http://localhost:3001/api/chat/web-search/memories";
+
+function buildMemoriesUrl(userId: string) {
+  return `${apiEndpoints.webSearchMemories}?userId=${encodeURIComponent(userId)}`;
+}
 
 export function useMemories(userId = DEFAULT_USER_ID) {
   const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchMemories = useCallback(async () => {
-    setIsLoading(true);
-    setError("");
+  useEffect(() => {
+    const controller = new AbortController();
 
-    try {
-      const response = await fetch(
-        `${MEMORIES_API}?userId=${encodeURIComponent(userId)}`,
-      );
+    async function load() {
+      setIsLoading(true);
 
-      if (!response.ok) {
-        throw new Error(`Failed to load memories (${response.status})`);
+      try {
+        const response = await fetch(buildMemoriesUrl(userId), {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load memories (${response.status})`);
+        }
+
+        const data = (await response.json()) as MemoriesResponse;
+
+        if (controller.signal.aborted) return;
+        setMemories(data.memories ?? []);
+        setError("");
+      } catch (fetchError) {
+        if (controller.signal.aborted) return;
+        console.error("Memory fetch error:", fetchError);
+        setError("Could not load saved memories.");
+        setMemories([]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
-
-      const data = (await response.json()) as MemoriesResponse;
-      setMemories(data.memories ?? []);
-    } catch (fetchError) {
-      console.error("Memory fetch error:", fetchError);
-      setError("Could not load saved memories.");
-      setMemories([]);
-    } finally {
-      setIsLoading(false);
     }
-  }, [userId]);
+
+    void load();
+
+    return () => {
+      controller.abort();
+    };
+  }, [userId, refreshKey]);
+
+  const refetchMemories = useCallback(() => {
+    setRefreshKey((key) => key + 1);
+  }, []);
 
   const deleteMemory = useCallback(
     async (memoryId: number) => {
       const response = await fetch(
-        `${MEMORIES_API}/${memoryId}?userId=${encodeURIComponent(userId)}`,
+        `${apiEndpoints.webSearchMemories}/${memoryId}?userId=${encodeURIComponent(userId)}`,
         { method: "DELETE" },
       );
 
@@ -53,15 +77,11 @@ export function useMemories(userId = DEFAULT_USER_ID) {
     [userId],
   );
 
-  useEffect(() => {
-    void fetchMemories();
-  }, [fetchMemories]);
-
   return {
     memories,
     isLoading,
     error,
-    refetchMemories: fetchMemories,
+    refetchMemories,
     deleteMemory,
   };
 }

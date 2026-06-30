@@ -32,6 +32,19 @@ const icons: Record<string, ReactNode> = {
       />
     </svg>
   ),
+  "multi-agent": (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+      <circle cx="12" cy="5" r="2.4" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="5" cy="18" r="2.4" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="19" cy="18" r="2.4" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M12 7.4 6.5 15.8M12 7.4l5.5 8.4M7.4 18h9.2"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  ),
 };
 
 export function AssistantSwitcher() {

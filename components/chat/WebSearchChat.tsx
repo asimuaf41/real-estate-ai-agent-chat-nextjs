@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useMemo } from "react";
 import { webSearchAssistant } from "@/config/assistants";
 import { DEFAULT_USER_ID, useMemories } from "@/hooks/useMemories";
 import { useChatStream } from "@/hooks/useChatStream";
@@ -15,6 +16,11 @@ export function WebSearchChat() {
     refetchMemories,
     deleteMemory,
   } = useMemories(DEFAULT_USER_ID);
+
+  const requestExtras = useMemo(() => ({ userId: DEFAULT_USER_ID }), []);
+  const handleStreamComplete = useCallback(() => {
+    refetchMemories();
+  }, [refetchMemories]);
 
   const {
     messages,
@@ -32,19 +38,20 @@ export function WebSearchChat() {
     requestMode: webSearchAssistant.requestMode,
     supportsTools: webSearchAssistant.supportsTools,
     errorMessage: webSearchAssistant.errorMessage,
-    requestExtras: { userId: DEFAULT_USER_ID },
-    onComplete: () => {
-      void refetchMemories();
-    },
+    requestExtras,
+    onComplete: handleStreamComplete,
   });
 
-  const handleDeleteMemory = async (memoryId: number) => {
-    try {
-      await deleteMemory(memoryId);
-    } catch (deleteError) {
-      console.error("Delete memory error:", deleteError);
-    }
-  };
+  const handleDeleteMemory = useCallback(
+    async (memoryId: number) => {
+      try {
+        await deleteMemory(memoryId);
+      } catch (deleteError) {
+        console.error("Delete memory error:", deleteError);
+      }
+    },
+    [deleteMemory],
+  );
 
   return (
     <ChatShell

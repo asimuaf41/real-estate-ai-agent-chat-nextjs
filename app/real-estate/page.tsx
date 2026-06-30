@@ -1,6 +1,5 @@
-import { AssistantChat } from "@/components/chat/AssistantChat";
-import { realEstateAssistant } from "@/config/assistants";
+import { RealEstateChat } from "@/components/chat/RealEstateChat";
 
 export default function RealEstatePage() {
-  return <AssistantChat config={realEstateAssistant} />;
+  return <RealEstateChat />;
 }
