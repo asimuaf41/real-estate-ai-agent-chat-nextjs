@@ -1,8 +1,9 @@
-// Same-origin proxy prefix — Next.js rewrites /backend-api/* → Railway/local backend.
-// This avoids browser CORS entirely in production.
-const API_PROXY_PREFIX = "/backend-api";
+const FALLBACK_API_BASE = "http://localhost:3001";
 
-export const API_CHAT_BASE = `${API_PROXY_PREFIX}/api/chat`;
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? FALLBACK_API_BASE;
+
+export const API_CHAT_BASE = `${API_BASE_URL}/api/chat`;
 
 export const apiEndpoints = {
   realEstateChat: `${API_CHAT_BASE}/real-estate`,
