@@ -1,7 +1,9 @@
-// Browser calls same-origin /backend-api/* — Next.js proxies to Railway (no CORS).
-const API_PROXY = "/backend-api";
+const FALLBACK_API_BASE = "http://localhost:3001";
 
-export const API_CHAT_BASE = `${API_PROXY}/api/chat`;
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? FALLBACK_API_BASE;
+
+export const API_CHAT_BASE = `${API_BASE_URL}/api/chat`;
 
 export const apiEndpoints = {
   realEstateChat: `${API_CHAT_BASE}/real-estate`,
