@@ -2,8 +2,7 @@
 // Set NEXT_PUBLIC_API_BASE_URL only when calling the backend directly.
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? "";
 
-// export const API_CHAT_BASE = `${API_BASE_URL}/api/chat`;
-export const API_CHAT_BASE = `/api/chat`;
+export const API_CHAT_BASE = `${API_BASE_URL}/api/chat`;
 
 export const apiEndpoints = {
   realEstateChat: `${API_CHAT_BASE}/real-estate`,
