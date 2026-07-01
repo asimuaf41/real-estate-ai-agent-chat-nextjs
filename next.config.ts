@@ -1,19 +1,7 @@
 import type { NextConfig } from "next";
 
-const backendUrl =
-  process.env.API_PROXY_TARGET ??
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "http://localhost:3001";
+// No need for rewrites; CORS should be fixed on the backend side now.
 
-const nextConfig: NextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendUrl}/api/:path*`,
-      },
-    ];
-  },
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
