@@ -1,5 +1,4 @@
-// Same-origin by default so Next.js rewrites proxy to the backend (no CORS).
-// Set NEXT_PUBLIC_API_BASE_URL only when calling the backend directly.
+// Same-origin relative URLs — no CORS, works on Vercel as one app.
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? "";
 
 export const API_CHAT_BASE = `${API_BASE_URL}/api/chat`;
