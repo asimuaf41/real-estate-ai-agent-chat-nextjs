@@ -40,9 +40,22 @@ Add these in the Vercel project settings (Production + Preview):
 - `TAVILY_API_KEY`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `HF_TOKEN` (required for RAG/memory embeddings on Vercel)
 - `DEFAULT_USER_ID` (optional; defaults to `asim-ali-001`)
 
 Do **not** set `NEXT_PUBLIC_API_BASE_URL` on Vercel — the app uses relative `/api` paths.
+
+## Embeddings on Vercel
+
+`@xenova/transformers` needs native ONNX (`libonnxruntime.so`), which is **not available** on Vercel serverless. That caused the production error you saw.
+
+On Vercel the app uses the **Hugging Face Inference API** with the same `all-MiniLM-L6-v2` model (384 dimensions — compatible with existing Supabase vectors).
+
+1. Create a token at https://huggingface.co/settings/tokens
+2. Add `HF_TOKEN` in Vercel → Settings → Environment Variables
+3. Redeploy
+
+Local `npm run dev` still uses Xenova by default.
 
 ## Deploy
 
@@ -54,6 +67,6 @@ Do **not** set `NEXT_PUBLIC_API_BASE_URL` on Vercel — the app uses relative `/
 ## Serverless notes
 
 - Weather reports, markdown reports, and email outbox are written under `data/` locally, or `/tmp` on Vercel (ephemeral — not durable across cold starts).
-- Embeddings use `@xenova/transformers` (Node runtime). First invocation may download the model into `/tmp` and can be slow/cold.
+- Embeddings: Xenova locally; Hugging Face Inference API on Vercel (`HF_TOKEN` required).
 - Agent streaming routes set `maxDuration = 60`. Multi-agent workflows may hit plan timeouts on Hobby; Pro is recommended for long streams.
 - In-memory rate limiting (8 req/min) is per serverless instance, not globally exact.
