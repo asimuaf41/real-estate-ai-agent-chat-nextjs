@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     VERCEL: present(process.env.VERCEL),
   };
 
-  const missingRequired = (
+  const missingRequired: string[] = (
     ["ANTHROPIC_API_KEY", "HF_TOKEN", "SUPABASE_URL"] as const
   ).filter((key) => !env[key]);
 
