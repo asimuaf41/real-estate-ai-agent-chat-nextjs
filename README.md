@@ -51,9 +51,11 @@ Do **not** set `NEXT_PUBLIC_API_BASE_URL` on Vercel — the app uses relative `/
 
 On Vercel the app uses the **Hugging Face Inference API** with the same `all-MiniLM-L6-v2` model (384 dimensions — compatible with existing Supabase vectors).
 
-1. Create a token at https://huggingface.co/settings/tokens
+1. Create a token at https://huggingface.co/settings/tokens with **Inference Providers** permission (read is not always enough for the router API).
 2. Add `HF_TOKEN` in Vercel → Settings → Environment Variables
 3. Redeploy
+
+Do **not** use the old `api-inference.huggingface.co` host — it is retired and no longer resolves.
 
 Local `npm run dev` still uses Xenova by default.
 

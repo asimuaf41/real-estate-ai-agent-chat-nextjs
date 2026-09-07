@@ -93,8 +93,14 @@ export async function GET(request: Request) {
           );
           if (!response.ok) {
             const body = await response.text();
+            const detail = body.trim().startsWith("<")
+              ? response.statusText || "request failed"
+              : body.slice(0, 200);
             throw new Error(
-              `Hugging Face ${response.status}: ${body.slice(0, 200)}`,
+              `Hugging Face ${response.status}: ${detail}` +
+                (response.status === 401 || response.status === 403
+                  ? " — token needs Inference Providers permission"
+                  : ""),
             );
           }
         }),
