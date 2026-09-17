@@ -19,7 +19,7 @@ export const webSearchAssistant: AssistantConfig = {
   errorMessage:
     "Could not reach the research server. Check if port 3001 is running.",
   quickPrompts: [
-    "Research the latest trends in React and Next.js development in 2025.",
+    "Research the latest trends in React and Next.js development in 2026.",
     "Find YouTube tutorials on building AI agents with Claude.",
     "What are the best practices for RAG systems? Search and summarize.",
     "Research TypeScript 5 features and save the report.",
