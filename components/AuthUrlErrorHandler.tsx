@@ -4,8 +4,9 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * When Supabase redirects auth failures to `/` (query or hash),
- * send the user to `/login` with a readable error message.
+ * Handles auth query/hash leftovers on any page:
+ * - error=* → /login with a readable message
+ * - code=* on `/` (Site URL fallback) → /auth/callback to finish PKCE
  */
 export function AuthUrlErrorHandler() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export function AuthUrlErrorHandler() {
       url.hash.startsWith("#") ? url.hash.slice(1) : url.hash,
     );
 
+    const code = url.searchParams.get("code") || hashParams.get("code");
     const error =
       url.searchParams.get("error") || hashParams.get("error");
     const errorCode =
@@ -23,6 +25,13 @@ export function AuthUrlErrorHandler() {
     const errorDescription =
       url.searchParams.get("error_description") ||
       hashParams.get("error_description");
+
+    // Supabase sometimes redirects to Site URL root with ?code= instead of /auth/callback.
+    if (code && !error && !errorCode) {
+      const params = new URLSearchParams({ code, next: "/" });
+      router.replace(`/auth/callback?${params.toString()}`);
+      return;
+    }
 
     if (!error && !errorCode && !errorDescription) {
       return;

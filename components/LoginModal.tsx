@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useId, useState } from "react";
-import { getEmailRedirectTo } from "@/lib/auth/errors";
+import { getEmailRedirectTo, getOAuthRedirectTo } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "login" | "signup";
@@ -171,7 +171,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     try {
       const supabase = createClient();
       const nextPath = `${window.location.pathname}${window.location.search}`;
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const redirectTo = getOAuthRedirectTo(window.location.origin, nextPath);
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",

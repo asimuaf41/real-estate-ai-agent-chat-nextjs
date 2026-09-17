@@ -22,7 +22,12 @@ alwaysApply: true
 SUPABASE_URL
 SUPABASE_ANON_KEY   # or SUPABASE_KEY alias
 SUPABASE_SERVICE_ROLE_KEY   # server-only RAG/memory — never expose
+NEXT_PUBLIC_SITE_URL        # production app URL, e.g. https://your-app.vercel.app
 ```
+
+Set Supabase Dashboard → Authentication → URL Configuration:
+- Site URL = production URL (not localhost) for deployed apps
+- Redirect URLs must include `https://your-domain/auth/callback` and `http://localhost:3000/auth/callback`
 
 Browser auth config is injected at runtime from these private vars via `SupabaseConfigScript`.
 Do not require `NEXT_PUBLIC_SUPABASE_*` duplicates.

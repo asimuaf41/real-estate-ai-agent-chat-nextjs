@@ -2,7 +2,7 @@
 
 import { FormEvent, Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getAuthErrorMessage, getEmailRedirectTo } from "@/lib/auth/errors";
+import { getAuthErrorMessage, getEmailRedirectTo, getOAuthRedirectTo } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthMode = "login" | "signup";
@@ -170,7 +170,7 @@ function LoginForm() {
 
     try {
       const supabase = createClient();
-      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      const redirectTo = getOAuthRedirectTo(window.location.origin, nextPath);
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
