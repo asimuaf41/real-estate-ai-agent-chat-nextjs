@@ -4,13 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { apiEndpoints } from "@/lib/api";
 import type { MemoriesResponse, MemoryItem } from "@/lib/chat/memory-types";
 
-const DEFAULT_USER_ID = "asim-ali-001";
-
-function buildMemoriesUrl(userId: string) {
-  return `${apiEndpoints.webSearchMemories}?userId=${encodeURIComponent(userId)}`;
-}
-
-export function useMemories(userId = DEFAULT_USER_ID) {
+/**
+ * Loads memories for the current Supabase session user (or anonymous guest).
+ * Identity is resolved server-side from cookies — never pass a client userId.
+ */
+export function useMemories() {
   const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,7 +21,7 @@ export function useMemories(userId = DEFAULT_USER_ID) {
       setIsLoading(true);
 
       try {
-        const response = await fetch(buildMemoriesUrl(userId), {
+        const response = await fetch(apiEndpoints.webSearchMemories, {
           signal: controller.signal,
         });
 
@@ -53,29 +51,26 @@ export function useMemories(userId = DEFAULT_USER_ID) {
     return () => {
       controller.abort();
     };
-  }, [userId, refreshKey]);
+  }, [refreshKey]);
 
   const refetchMemories = useCallback(() => {
     setRefreshKey((key) => key + 1);
   }, []);
 
-  const deleteMemory = useCallback(
-    async (memoryId: number) => {
-      const response = await fetch(
-        `${apiEndpoints.webSearchMemories}/${memoryId}?userId=${encodeURIComponent(userId)}`,
-        { method: "DELETE" },
-      );
+  const deleteMemory = useCallback(async (memoryId: number) => {
+    const response = await fetch(
+      `${apiEndpoints.webSearchMemories}/${memoryId}`,
+      { method: "DELETE" },
+    );
 
-      if (!response.ok) {
-        throw new Error(`Failed to delete memory (${response.status})`);
-      }
+    if (!response.ok) {
+      throw new Error(`Failed to delete memory (${response.status})`);
+    }
 
-      setMemories((previous) =>
-        previous.filter((memory) => memory.id !== memoryId),
-      );
-    },
-    [userId],
-  );
+    setMemories((previous) =>
+      previous.filter((memory) => memory.id !== memoryId),
+    );
+  }, []);
 
   return {
     memories,
@@ -85,5 +80,3 @@ export function useMemories(userId = DEFAULT_USER_ID) {
     deleteMemory,
   };
 }
-
-export { DEFAULT_USER_ID };

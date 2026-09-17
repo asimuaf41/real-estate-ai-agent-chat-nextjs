@@ -1,0 +1,22 @@
+---
+description: Before/after coding workflow adapted to this Next.js App Router project
+alwaysApply: true
+---
+
+# Before Coding
+
+1. Understand existing architecture: App Router under `app/`, UI in `components/chat/`, client hooks in `hooks/`, shared client utils in `lib/`, server logic in `lib/server/{config,services,tools,prompts,utils}/`, assistant themes in `config/assistants.ts`.
+2. Search `lib/server/**` and `app/api/**` for an existing service/route to extend before adding a new one.
+3. Search `components/chat/**` and `hooks/**` for reusable UI/hooks before creating new ones.
+4. Thin API routes: keep handlers in `app/api/**`, business logic in `lib/server/services/**`.
+5. Create a short implementation plan and explain trade-offs before large changes.
+6. If the task touches auth/session identity, open questions, or unclear product behavior — stop and ask rather than assuming.
+
+# After Coding
+
+- If Supabase schema/RLS SQL changed, update files under `data/` (e.g. RLS SQL) and note what must be re-run in the Supabase SQL Editor.
+- Exercise new/changed routes directly (no test suite yet) — hit `/api/...` or the relevant page flow.
+- Run `npm run lint`.
+- Check TypeScript with `npx tsc --noEmit`.
+- Explain what changed and call out potential edge cases.
+- Note any new open question or README/code mismatch you discover.

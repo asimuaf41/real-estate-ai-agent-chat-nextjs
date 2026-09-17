@@ -1,0 +1,36 @@
+---
+description: Supabase Auth standards — soft guest limit, private env, SSR sessions
+alwaysApply: true
+---
+
+# Authentication
+
+- Auth provider: Supabase Auth
+- Method: Email/password + Google OAuth
+- Session management: `@supabase/ssr` (never `@supabase/auth-helpers-nextjs`)
+- Architecture: root `proxy.ts` refreshes cookies only — routes are public (no hard login redirect)
+- Session helper: `lib/supabase/middleware.ts` (`updateSession`)
+- Auth callback: `app/auth/callback/route.ts` (OAuth + default email ConfirmationURL → ?code=)
+- Email confirm: `app/auth/confirm/route.ts` (optional custom template with token_hash)
+- Signup `emailRedirectTo` must be `/auth/callback?next=...` when using default {{ .ConfirmationURL }}
+- Optional custom Confirm signup template:
+  `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/`
+
+## Env vars (preferred — private names)
+
+```
+SUPABASE_URL
+SUPABASE_ANON_KEY   # or SUPABASE_KEY alias
+SUPABASE_SERVICE_ROLE_KEY   # server-only RAG/memory — never expose
+```
+
+Browser auth config is injected at runtime from these private vars via `SupabaseConfigScript`.
+Do not require `NEXT_PUBLIC_SUPABASE_*` duplicates.
+
+The anon/publishable key will still reach the browser (required for client auth). It is not a secret —
+protect data with RLS. Never expose the service role key.
+
+## Existing server Supabase (RAG / memory)
+
+Keep `SUPABASE_SERVICE_ROLE_KEY` server-only in `lib/server/`.
+When a user is signed in, derive identity from `getUser()` on the server.

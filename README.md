@@ -40,8 +40,9 @@ Add these in the Vercel project settings (Production + Preview):
 - `TAVILY_API_KEY`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_ANON_KEY` (or `SUPABASE_KEY`) — publishable auth key; keep out of `NEXT_PUBLIC_*` when possible
 - `HF_TOKEN` (required for RAG/memory embeddings on Vercel)
-- `DEFAULT_USER_ID` (optional; defaults to `asim-ali-001`)
+- `DEFAULT_USER_ID` (optional; guests use anonymous, signed-in users use Auth UUID)
 
 Do **not** set `NEXT_PUBLIC_API_BASE_URL` on Vercel — the app uses relative `/api` paths.
 

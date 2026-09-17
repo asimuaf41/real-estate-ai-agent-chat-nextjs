@@ -1,15 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
 import { multiAgentAssistant } from "@/config/assistants";
-import { DEFAULT_USER_ID } from "@/hooks/useMemories";
 import { useChatStream } from "@/hooks/useChatStream";
 import { ChatShell } from "./ChatShell";
 import { MultiAgentToolEvents } from "./tool-events/MultiAgentToolEvents";
 
 export function MultiAgentChat() {
-  const requestExtras = useMemo(() => ({ userId: DEFAULT_USER_ID }), []);
-
   const {
     messages,
     input,
@@ -26,7 +22,6 @@ export function MultiAgentChat() {
     requestMode: multiAgentAssistant.requestMode,
     supportsTools: multiAgentAssistant.supportsTools,
     errorMessage: multiAgentAssistant.errorMessage,
-    requestExtras,
   });
 
   return (

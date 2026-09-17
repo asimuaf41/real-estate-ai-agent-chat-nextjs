@@ -1,0 +1,14 @@
+---
+description: Non-negotiable security rules for auth, secrets, and API data access
+alwaysApply: true
+---
+
+# Security Rules (Non-negotiable)
+
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` (or any service role key) to the frontend
+- Never call `getSession()` server-side (can be spoofed) — use `getUser()`
+- Always validate the user server-side before returning data from `app/api/**`
+- Do not put secrets in `NEXT_PUBLIC_*` — only anon URL/key for Supabase Auth client
+- Server API keys (`ANTHROPIC_*`, `TAVILY_*`, `WEATHER_*`, `HF_TOKEN`) stay server-only
+- Prefer cookie-based SSR sessions via `@supabase/ssr`; never store auth tokens in `localStorage`
+- Enforce RLS with `auth.uid()`; do not rely on client-supplied user IDs

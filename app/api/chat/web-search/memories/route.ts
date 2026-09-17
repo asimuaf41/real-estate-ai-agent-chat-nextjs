@@ -1,14 +1,23 @@
 import { NextResponse } from "next/server";
 import { getAllMemories } from "@/lib/server/services/memory.service.js";
-import { resolveUserId } from "@/lib/server/utils/request";
+import { resolveRequestUserId } from "@/lib/server/utils/request";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = resolveUserId({}, searchParams);
+    const userId = await resolveRequestUserId();
+
+    // Guests share no durable memory — return empty until they sign in.
+    if (userId === "anonymous") {
+      return NextResponse.json({
+        userId,
+        total: 0,
+        memories: [],
+      });
+    }
+
     const memories = await getAllMemories(userId);
 
     return NextResponse.json({

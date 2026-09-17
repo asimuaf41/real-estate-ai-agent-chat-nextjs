@@ -1,7 +1,9 @@
-import { env } from "../config/env.js";
+import { createClient } from "@/lib/supabase/server";
 import { sanitizeChatMessages } from "./sanitizeMessages.js";
 
 type ChatMessage = { role: string; content: string };
+
+export const ANONYMOUS_USER_ID = "anonymous";
 
 export function normalizeMessages(
   payload: Record<string, unknown> | null | undefined,
@@ -20,13 +22,36 @@ export function normalizeMessages(
   return null;
 }
 
+/**
+ * Resolve the request identity from the Supabase session cookie.
+ * Never trust client-supplied userId (body/query) — it can be spoofed.
+ * Guests get a shared "anonymous" id (no durable per-user memory).
+ */
+export async function resolveRequestUserId(): Promise<string> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.id) {
+      return user.id;
+    }
+  } catch {
+    // Missing auth env or cookie issues — treat as guest.
+  }
+
+  return ANONYMOUS_USER_ID;
+}
+
+/**
+ * @deprecated Use resolveRequestUserId() — client-supplied ids are not trusted.
+ */
 export function resolveUserId(
-  body: Record<string, unknown> | null | undefined,
-  searchParams?: URLSearchParams | null,
+  _body?: Record<string, unknown> | null,
+  _searchParams?: URLSearchParams | null,
 ): string {
-  const fromBody =
-    typeof body?.userId === "string" ? body.userId : undefined;
-  return fromBody || searchParams?.get("userId") || env.defaultUserId;
+  return ANONYMOUS_USER_ID;
 }
 
 export async function readJsonBody(

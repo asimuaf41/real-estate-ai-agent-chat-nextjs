@@ -1,0 +1,19 @@
+---
+description: Project layout and stack conventions for chat-ai-agent
+alwaysApply: true
+---
+
+# Project Architecture
+
+- Stack: Next.js App Router (`app/`), React 19, Tailwind v4, TypeScript UI + mostly JS server services
+- AI: direct `@anthropic-ai/sdk` streaming (not Vercel AI SDK); SSE via `lib/server/utils/sse.ts`
+- Data: Supabase (`@supabase/supabase-js`) for RAG/memory — no Prisma/ORM
+- Pages: `/` web search, `/real-estate`, `/weather`, `/multi-agent`
+- Client API map: `lib/api.ts`; streaming: `hooks/useChatStream.ts`
+- Deploy: single Vercel project; local file writes under `data/` become ephemeral `/tmp` on Vercel
+
+## When adding features
+
+- Prefer extending `lib/server/services/*` over bloating route handlers
+- Keep secrets server-side; use relative `/api` paths (no `NEXT_PUBLIC_API_BASE_URL` on Vercel)
+- Auth (in progress): root `proxy.ts` refreshes sessions; guest soft-limit + LoginModal — see authentication rule

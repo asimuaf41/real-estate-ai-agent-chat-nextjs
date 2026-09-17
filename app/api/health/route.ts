@@ -32,6 +32,9 @@ export async function GET(request: Request) {
     ),
     SUPABASE_URL: present(process.env.SUPABASE_URL),
     SUPABASE_SERVICE_ROLE_KEY: present(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    SUPABASE_ANON_KEY: present(
+      process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
+    ),
     SUPABASE_KEY: present(process.env.SUPABASE_KEY),
     TAVILY_API_KEY: present(process.env.TAVILY_API_KEY),
     WEATHER_API_KEY: present(process.env.WEATHER_API_KEY),

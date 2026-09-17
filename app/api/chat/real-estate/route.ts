@@ -12,6 +12,7 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+/** Public agent — guests and signed-in users may both use it (no 401). */
 export async function POST(request: Request) {
   const limited = enforceAgentRateLimit(request);
   if (limited) return limited;

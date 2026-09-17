@@ -1,6 +1,11 @@
 "use client";
 
-import type { FormEvent, KeyboardEvent, ReactNode, RefObject } from "react";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { UserMenu } from "@/app/components/UserMenu";
+import { LoginModal } from "@/components/LoginModal";
+import { SearchLimitBanner } from "@/components/SearchLimitBanner";
+import { useSearchLimit } from "@/hooks/useSearchLimit";
 import type { AssistantConfig, ChatMessage } from "@/lib/chat/types";
 import { AssistantSwitcher } from "./AssistantSwitcher";
 import { TypingDots } from "./TypingDots";
@@ -217,7 +222,43 @@ export function ChatShell({
   beforeMessages,
   renderToolEvents,
 }: ChatShellProps) {
+  const router = useRouter();
   const { theme } = config;
+  const [showModal, setShowModal] = useState(false);
+  const { hasReachedLimit, incrementCount, resetCount } = useSearchLimit();
+
+  function consumeSearchOrPromptLogin() {
+    if (hasReachedLimit()) {
+      setShowModal(true);
+      return false;
+    }
+    incrementCount();
+    return true;
+  }
+
+  function handleSubmitGuarded(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!input.trim() || isStreaming) return;
+    if (!consumeSearchOrPromptLogin()) return;
+    onSubmit(event);
+  }
+
+  function handleKeyDownGuarded(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      if (!input.trim() || isStreaming) return;
+      if (!consumeSearchOrPromptLogin()) {
+        event.preventDefault();
+        return;
+      }
+    }
+    onKeyDown(event);
+  }
+
+  function handlePromptSelectGuarded(prompt: string) {
+    if (isStreaming) return;
+    if (!consumeSearchOrPromptLogin()) return;
+    onPromptSelect(prompt);
+  }
 
   return (
     <div className={`min-h-screen px-4 py-6 sm:px-6 lg:px-8 ${theme.pageBackground}`}>
@@ -226,7 +267,7 @@ export function ChatShell({
       >
         <header className={`px-5 py-5 sm:px-6 ${theme.headerBackground}`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
+            <div className="min-w-0 max-w-2xl flex-1">
               <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${theme.headerEyebrow}`}>
                 {config.eyebrow}
               </p>
@@ -237,12 +278,16 @@ export function ChatShell({
                 {config.description}
               </p>
             </div>
-            <AssistantSwitcher />
+            <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end lg:max-w-[min(100%,34rem)]">
+              <UserMenu onSignInClick={() => setShowModal(true)} />
+              <AssistantSwitcher />
+            </div>
           </div>
         </header>
 
         <main className="flex flex-1 flex-col overflow-hidden p-4 sm:p-6">
           <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+            <SearchLimitBanner onSignInClick={() => setShowModal(true)} />
             {beforeMessages}
             <ChatMessageList
               messages={messages}
@@ -251,7 +296,7 @@ export function ChatShell({
               emptyTitle={`Start with ${config.label}`}
               emptyDescription={config.description}
               quickPrompts={config.quickPrompts}
-              onPromptSelect={onPromptSelect}
+              onPromptSelect={handlePromptSelectGuarded}
               renderToolEvents={renderToolEvents}
             />
             <div ref={bottomRef} />
@@ -268,8 +313,8 @@ export function ChatShell({
             quickPrompts={config.quickPrompts}
             showQuickPrompts={messages.length > 0}
             onInputChange={onInputChange}
-            onSubmit={onSubmit}
-            onKeyDown={onKeyDown}
+            onSubmit={handleSubmitGuarded}
+            onKeyDown={handleKeyDownGuarded}
             onPromptFill={onInputChange}
             onStop={onStop}
           />
@@ -277,6 +322,16 @@ export function ChatShell({
           {error ? <p className="text-xs text-rose-400">{error}</p> : null}
         </main>
       </div>
+
+      <LoginModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSuccess={() => {
+          resetCount();
+          setShowModal(false);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

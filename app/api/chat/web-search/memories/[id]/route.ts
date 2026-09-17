@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
 import { deleteMemory } from "@/lib/server/services/memory.service.js";
-import { resolveUserId } from "@/lib/server/utils/request";
+import { resolveRequestUserId } from "@/lib/server/utils/request";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
-    const { searchParams } = new URL(request.url);
-    const userId = resolveUserId({}, searchParams);
+    const userId = await resolveRequestUserId();
     const memoryId = Number(id);
 
     if (!Number.isFinite(memoryId)) {

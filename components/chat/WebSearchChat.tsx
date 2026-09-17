@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { webSearchAssistant } from "@/config/assistants";
-import { DEFAULT_USER_ID, useMemories } from "@/hooks/useMemories";
+import { useMemories } from "@/hooks/useMemories";
 import { useChatStream } from "@/hooks/useChatStream";
 import { ChatShell } from "./ChatShell";
 import { MemoryPanel } from "./MemoryPanel";
@@ -15,9 +15,8 @@ export function WebSearchChat() {
     error: memoriesError,
     refetchMemories,
     deleteMemory,
-  } = useMemories(DEFAULT_USER_ID);
+  } = useMemories();
 
-  const requestExtras = useMemo(() => ({ userId: DEFAULT_USER_ID }), []);
   const handleStreamComplete = useCallback(() => {
     refetchMemories();
   }, [refetchMemories]);
@@ -38,7 +37,6 @@ export function WebSearchChat() {
     requestMode: webSearchAssistant.requestMode,
     supportsTools: webSearchAssistant.supportsTools,
     errorMessage: webSearchAssistant.errorMessage,
-    requestExtras,
     onComplete: handleStreamComplete,
   });
 

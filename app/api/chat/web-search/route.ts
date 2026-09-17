@@ -3,7 +3,7 @@ import { enforceAgentRateLimit } from "@/lib/server/utils/rateLimit";
 import {
   normalizeMessages,
   readJsonBody,
-  resolveUserId,
+  resolveRequestUserId,
 } from "@/lib/server/utils/request";
 import {
   createSseErrorResponse,
@@ -26,8 +26,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { searchParams } = new URL(request.url);
-  const userId = resolveUserId(body, searchParams);
+  const userId = await resolveRequestUserId();
 
   return createSseResponse(async (send) => {
     await streamWebSearchChat(messages, userId, send);
