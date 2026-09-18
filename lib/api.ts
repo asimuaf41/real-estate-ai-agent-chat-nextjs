@@ -12,4 +12,5 @@ export const apiEndpoints = {
   weatherChat: `${API_CHAT_BASE}/weather`,
   multiAgentChat: `${API_CHAT_BASE}/multi-agent`,
   simpleChat: API_CHAT_BASE,
+  usageStats: `${API_BASE_URL}/api/usage/stats`,
 } as const;

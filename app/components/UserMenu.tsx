@@ -120,6 +120,12 @@ export function UserMenu({ onSignInClick }: UserMenuProps) {
             {user.email ?? "Account"}
           </p>
         </div>
+        <Link
+            href="/dashboard"
+            className="shrink-0 rounded-xl border border-orange-500/20 bg-orange-500/10 px-3 py-1.5 text-xs font-medium text-orange-200 transition hover:border-orange-400/40 hover:bg-orange-500/20"
+          >
+            Dashboard
+          </Link>
         <button
           type="button"
           onClick={handleSignOut}

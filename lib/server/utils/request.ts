@@ -22,6 +22,16 @@ export function normalizeMessages(
   return null;
 }
 
+export function latestUserMessageLength(messages: ChatMessage[]): number {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    if (messages[i]?.role === "user" && typeof messages[i].content === "string") {
+      return messages[i].content.length;
+    }
+  }
+
+  return 0;
+}
+
 /**
  * Resolve the request identity from the Supabase session cookie.
  * Never trust client-supplied userId (body/query) — it can be spoofed.
