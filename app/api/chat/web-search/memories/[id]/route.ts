@@ -11,7 +11,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
-    const userId = await resolveRequestUserId();
+    const userId = await resolveRequestUserId(_request);
     const memoryId = Number(id);
 
     if (!Number.isFinite(memoryId)) {

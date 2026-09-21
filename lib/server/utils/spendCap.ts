@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { USER_SPEND_CAP_USD } from "@/lib/spendCap";
 import { getLifetimeSpendUsd } from "@/lib/usageLogger";
 import { ANONYMOUS_USER_ID } from "./request";
@@ -20,7 +21,7 @@ export async function rejectIfOverSpendCap(
       );
     }
   } catch (error) {
-    console.error("Spend cap check failed:", error);
+    logger.error("Spend cap check failed", { userId, error });
   }
 
   return null;

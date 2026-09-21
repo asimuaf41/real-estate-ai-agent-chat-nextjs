@@ -11,6 +11,7 @@ import {
   DEFAULT_USAGE_STATS_QUERY,
   USAGE_RANGE_LABELS,
 } from "@/lib/chat/usage-types";
+import { calculateCost } from "@/lib/costs";
 import { isOverSpendCap } from "@/lib/spendCap";
 import { ANONYMOUS_USER_ID } from "@/lib/server/utils/request";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -46,6 +47,33 @@ function toNumber(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function toBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "t" || normalized === "1";
+  }
+  return Boolean(value);
+}
+
+function roundUsd(value: number): number {
+  return Math.round((Number.isFinite(value) ? value : 0) * 1_000_000) / 1_000_000;
+}
+
+function logCost(log: UsageLogRow): number {
+  const stored = toNumber(log.cost_usd);
+  if (stored > 0) return roundUsd(stored);
+
+  const inputTokens = toNumber(log.input_tokens);
+  const outputTokens = toNumber(log.output_tokens);
+  if (inputTokens > 0 || outputTokens > 0) {
+    return roundUsd(calculateCost(log.model, inputTokens, outputTokens));
+  }
+
+  return 0;
+}
+
 function startOfUtcDay(date: Date): Date {
   return new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
@@ -75,9 +103,9 @@ function toUsageLogEntry(row: UsageLogRow): UsageLogEntry {
     inputTokens: toNumber(row.input_tokens),
     outputTokens: toNumber(row.output_tokens),
     totalTokens: toNumber(row.total_tokens),
-    costUsd: toNumber(row.cost_usd),
+    costUsd: logCost(row),
     durationMs: toNumber(row.duration_ms),
-    success: Boolean(row.success),
+    success: toBoolean(row.success),
     errorMessage: row.error_message ?? null,
     createdAt: row.created_at,
   };
@@ -101,8 +129,9 @@ function matchesFilters(log: UsageLogRow, query: UsageStatsQuery): boolean {
   }
 
   if (query.statuses.length === 1) {
-    if (query.statuses[0] === "success" && !log.success) return false;
-    if (query.statuses[0] === "failed" && log.success) return false;
+    const succeeded = toBoolean(log.success);
+    if (query.statuses[0] === "success" && !succeeded) return false;
+    if (query.statuses[0] === "failed" && succeeded) return false;
   }
 
   if (query.models.length > 0 && !query.models.includes(log.model || "unknown")) {
@@ -169,7 +198,7 @@ function buildDailyTrend(
     const bucket = buckets.get(key);
     if (!bucket) continue;
     bucket.calls += 1;
-    bucket.cost += toNumber(log.cost_usd);
+    bucket.cost = roundUsd(bucket.cost + logCost(log));
     bucket.tokens += toNumber(log.total_tokens);
   }
 
@@ -200,23 +229,29 @@ export function buildUsageStats(
   let thisMonthCost = 0;
   let failedCalls = 0;
   let durationTotal = 0;
+  let billableCalls = 0;
 
+  // Today / this month are calendar windows, independent of the selected range.
   for (const log of scopedLogs) {
-    const cost = toNumber(log.cost_usd);
+    const cost = logCost(log);
     const createdAt = new Date(log.created_at).getTime();
     if (createdAt >= todayStart) todayCost += cost;
     if (createdAt >= monthStart) thisMonthCost += cost;
   }
 
   for (const log of periodLogs) {
-    const cost = toNumber(log.cost_usd);
-    const tokens = toNumber(log.total_tokens);
+    const cost = logCost(log);
+    const tokens =
+      toNumber(log.total_tokens) ||
+      toNumber(log.input_tokens) + toNumber(log.output_tokens);
     const agentType = log.agent_type || "unknown";
+    const succeeded = toBoolean(log.success);
 
     totalCost += cost;
     totalTokens += tokens;
     durationTotal += toNumber(log.duration_ms);
-    if (!log.success) failedCalls += 1;
+    if (!succeeded) failedCalls += 1;
+    if (cost > 0 || tokens > 0) billableCalls += 1;
 
     const bucket = byAgent[agentType] ?? {
       calls: 0,
@@ -227,23 +262,30 @@ export function buildUsageStats(
     bucket.calls += 1;
     bucket.cost += cost;
     bucket.tokens += tokens;
-    if (!log.success) bucket.failed += 1;
+    if (!succeeded) bucket.failed += 1;
     byAgent[agentType] = bucket;
+  }
+
+  for (const agentType of Object.keys(byAgent)) {
+    byAgent[agentType].cost = roundUsd(byAgent[agentType].cost);
   }
 
   const totalCalls = periodLogs.length;
 
   return {
-    totalCost,
+    totalCost: roundUsd(totalCost),
     totalTokens,
     totalCalls,
-    todayCost,
-    thisMonthCost,
+    todayCost: roundUsd(todayCost),
+    thisMonthCost: roundUsd(thisMonthCost),
     failedCalls,
     successRate:
       totalCalls === 0 ? 100 : ((totalCalls - failedCalls) / totalCalls) * 100,
     avgDurationMs: totalCalls === 0 ? 0 : durationTotal / totalCalls,
-    costPerCall: totalCalls === 0 ? 0 : totalCost / totalCalls,
+    costPerCall: billableCalls === 0 ? 0 : roundUsd(totalCost / billableCalls),
+    billableCalls,
+    sourceCallCount: logs.length,
+    allUsersCallCount: null,
     byAgent,
     last10: periodLogs.slice(0, 10).map(toUsageLogEntry),
     dailyTrend: buildDailyTrend(periodLogs, window.from, now),
@@ -364,7 +406,7 @@ function buildUserRows(
       cost: 0,
       lastActiveAt: null,
     };
-    current.cost += toNumber(log.cost_usd);
+    current.cost = roundUsd(current.cost + logCost(log));
     if (
       !current.lastActiveAt ||
       new Date(log.created_at).getTime() >
@@ -386,8 +428,10 @@ function buildUserRows(
       cost: 0,
     };
     current.calls += 1;
-    current.tokens += toNumber(log.total_tokens);
-    current.cost += toNumber(log.cost_usd);
+    current.tokens +=
+      toNumber(log.total_tokens) ||
+      toNumber(log.input_tokens) + toNumber(log.output_tokens);
+    current.cost = roundUsd(current.cost + logCost(log));
     period.set(log.user_id, current);
   }
 
@@ -403,8 +447,8 @@ function buildUserRows(
         label: userLabel(userId, email),
         periodCalls: slice.calls,
         periodTokens: slice.tokens,
-        periodCost: slice.cost,
-        lifetimeCost: life.cost,
+        periodCost: roundUsd(slice.cost),
+        lifetimeCost: roundUsd(life.cost),
         limitReached: isOverSpendCap(life.cost),
         lastActiveAt: life.lastActiveAt,
       };
@@ -423,10 +467,20 @@ export async function getDashboardStats(options: {
     scope: isOwner && options.query.scope === "all" ? "all" : "me",
   };
   const supabase = requireSupabase();
-  const logs = await fetchUsageLogs(
-    supabase,
-    query.scope === "all" ? undefined : viewerId,
-  );
+  let logs: UsageLogRow[];
+  let allUsersCallCount: number | null = null;
+
+  if (isOwner) {
+    const allLogs = await fetchUsageLogs(supabase);
+    allUsersCallCount = allLogs.length;
+    logs =
+      query.scope === "all"
+        ? allLogs
+        : allLogs.filter((log) => log.user_id === viewerId);
+  } else {
+    logs = await fetchUsageLogs(supabase, viewerId);
+  }
+
   const stats = buildUsageStats(logs, new Date(), query);
   const window = rangeWindow(query, new Date(), logs);
   const fromMs = window.from.getTime();
@@ -454,5 +508,6 @@ export async function getDashboardStats(options: {
     isOwner,
     query,
     userRows,
+    allUsersCallCount,
   };
 }

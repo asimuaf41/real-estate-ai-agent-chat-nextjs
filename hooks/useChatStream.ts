@@ -4,6 +4,7 @@ import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } fr
 import { readSseStream } from "@/lib/chat/parse-sse-stream";
 import { sanitizeChatMessages } from "@/lib/chat/sanitize-messages";
 import type { ChatMessage, RequestMode, StreamEvent, ToolEvent } from "@/lib/chat/types";
+import { createClient as createBrowserSupabase } from "@/lib/supabase/client";
 
 type UseChatStreamOptions = {
   apiUrl: string;
@@ -45,6 +46,26 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+async function chatRequestHeaders(): Promise<HeadersInit> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  try {
+    const supabase = createBrowserSupabase();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    }
+  } catch {
+    // Guest or auth config not ready — cookie session still applies same-origin.
+  }
+
+  return headers;
 }
 
 export function useChatStream({
@@ -168,7 +189,8 @@ export function useChatStream({
       try {
         const response = await fetch(apiUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          headers: await chatRequestHeaders(),
           body: JSON.stringify(
             buildRequestBody(requestMode, nextContent, messages, requestExtras),
           ),

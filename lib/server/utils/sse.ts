@@ -1,4 +1,7 @@
+import { logger } from "@/lib/logger";
+
 type SsePayload = Record<string, unknown>;
+
 type SseSend = (payload: SsePayload) => void;
 
 const encoder = new TextEncoder();
@@ -63,7 +66,12 @@ export function createSseResponse(
         send({ done: true });
       } catch (error) {
         const message = formatServerError(error);
-        console.error("[sse]", message, error);
+        if (
+          !(error instanceof Error) ||
+          error.name !== "AgentLoopLimitError"
+        ) {
+          logger.error("SSE stream failed", { message, error });
+        }
         send({ error: message });
       } finally {
         controller.close();
@@ -76,7 +84,7 @@ export function createSseResponse(
 
 export function createSseErrorResponse(error: unknown): Response {
   const message = formatServerError(error);
-  console.error("[sse]", message, error);
+  logger.error("SSE request rejected", { message, error });
   const stream = new ReadableStream({
     start(controller) {
       controller.enqueue(encodeSseData({ error: message }));

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthUrlErrorHandler } from "@/components/AuthUrlErrorHandler";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SupabaseConfigScript } from "@/components/SupabaseConfigScript";
 import "./globals.css";
 
@@ -32,7 +33,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SupabaseConfigScript />
         <AuthUrlErrorHandler />
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
       </body>
     </html>
   );

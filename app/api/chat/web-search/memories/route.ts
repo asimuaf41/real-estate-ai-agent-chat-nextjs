@@ -5,9 +5,9 @@ import { resolveRequestUserId } from "@/lib/server/utils/request";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const userId = await resolveRequestUserId();
+    const userId = await resolveRequestUserId(request);
 
     // Guests share no durable memory — return empty until they sign in.
     if (userId === "anonymous") {

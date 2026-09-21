@@ -81,6 +81,9 @@ export type UsageStats = {
   successRate: number;
   avgDurationMs: number;
   costPerCall: number;
+  billableCalls: number;
+  sourceCallCount: number;
+  allUsersCallCount: number | null;
   byAgent: Record<string, AgentUsageBreakdown>;
   last10: UsageLogEntry[];
   dailyTrend: DailyUsagePoint[];

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { UserMenu } from "@/app/components/UserMenu";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoginModal } from "@/components/LoginModal";
 import { SearchLimitBanner } from "@/components/SearchLimitBanner";
 import { useSearchLimit } from "@/hooks/useSearchLimit";
@@ -285,42 +286,44 @@ export function ChatShell({
           </div>
         </header>
 
-        <main className="flex flex-1 flex-col overflow-hidden p-4 sm:p-6">
-          <div className="flex-1 space-y-4 overflow-y-auto pr-1">
-            <SearchLimitBanner onSignInClick={() => setShowModal(true)} />
-            {beforeMessages}
-            <ChatMessageList
-              messages={messages}
+        <ErrorBoundary>
+          <main className="flex flex-1 flex-col overflow-hidden p-4 sm:p-6">
+            <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+              <SearchLimitBanner onSignInClick={() => setShowModal(true)} />
+              {beforeMessages}
+              <ChatMessageList
+                messages={messages}
+                isStreaming={isStreaming}
+                theme={theme}
+                emptyTitle={`Start with ${config.label}`}
+                emptyDescription={config.description}
+                quickPrompts={config.quickPrompts}
+                onPromptSelect={handlePromptSelectGuarded}
+                renderToolEvents={renderToolEvents}
+              />
+              <div ref={bottomRef} />
+            </div>
+
+            <ChatInput
+              input={input}
               isStreaming={isStreaming}
+              placeholder={config.placeholder}
+              submitLabel={config.submitLabel}
+              streamingLabel={config.streamingLabel}
+              stopLabel="Stop"
               theme={theme}
-              emptyTitle={`Start with ${config.label}`}
-              emptyDescription={config.description}
               quickPrompts={config.quickPrompts}
-              onPromptSelect={handlePromptSelectGuarded}
-              renderToolEvents={renderToolEvents}
+              showQuickPrompts={messages.length > 0}
+              onInputChange={onInputChange}
+              onSubmit={handleSubmitGuarded}
+              onKeyDown={handleKeyDownGuarded}
+              onPromptFill={onInputChange}
+              onStop={onStop}
             />
-            <div ref={bottomRef} />
-          </div>
 
-          <ChatInput
-            input={input}
-            isStreaming={isStreaming}
-            placeholder={config.placeholder}
-            submitLabel={config.submitLabel}
-            streamingLabel={config.streamingLabel}
-            stopLabel="Stop"
-            theme={theme}
-            quickPrompts={config.quickPrompts}
-            showQuickPrompts={messages.length > 0}
-            onInputChange={onInputChange}
-            onSubmit={handleSubmitGuarded}
-            onKeyDown={handleKeyDownGuarded}
-            onPromptFill={onInputChange}
-            onStop={onStop}
-          />
-
-          {error ? <p className="text-xs text-rose-400">{error}</p> : null}
-        </main>
+            {error ? <p className="text-xs text-rose-400">{error}</p> : null}
+          </main>
+        </ErrorBoundary>
       </div>
 
       <LoginModal

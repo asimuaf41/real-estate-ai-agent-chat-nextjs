@@ -22,6 +22,7 @@ export function useMemories() {
 
       try {
         const response = await fetch(apiEndpoints.webSearchMemories, {
+          credentials: "include",
           signal: controller.signal,
         });
 
@@ -60,7 +61,7 @@ export function useMemories() {
   const deleteMemory = useCallback(async (memoryId: number) => {
     const response = await fetch(
       `${apiEndpoints.webSearchMemories}/${memoryId}`,
-      { method: "DELETE" },
+      { method: "DELETE", credentials: "include" },
     );
 
     if (!response.ok) {

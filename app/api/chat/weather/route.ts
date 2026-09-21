@@ -1,6 +1,10 @@
 import { selectModel } from "@/lib/modelSelector";
 import { streamWeatherChat } from "@/lib/server/services/weather.service.js";
-import { readJsonBody, resolveRequestUserId } from "@/lib/server/utils/request";
+import {
+  parseUserMessage,
+  readJsonBody,
+  resolveRequestUserId,
+} from "@/lib/server/utils/request";
 import { enforceAgentRateLimit } from "@/lib/server/utils/rateLimit";
 import { rejectIfOverSpendCap } from "@/lib/server/utils/spendCap";
 import {
@@ -20,18 +24,17 @@ export async function POST(request: Request) {
   if (limited) return limited;
 
   const body = await readJsonBody(request);
-  const userMessage = body?.message;
-
-  if (typeof userMessage !== "string" || !userMessage.trim()) {
+  const parsed = parseUserMessage(body?.message);
+  if (!parsed.valid || parsed.value === undefined) {
     return createSseErrorResponse(
-      new Error('Provide a non-empty "message" string'),
+      new Error(parsed.error ?? 'Provide a non-empty "message" string'),
     );
   }
 
-  const userId = await resolveRequestUserId();
+  const userId = await resolveRequestUserId(request);
   const blocked = await rejectIfOverSpendCap(userId);
   if (blocked) return blocked;
-  const message = userMessage.trim();
+  const message = parsed.value;
   const model = selectModel("weather", message.length);
 
   return createSseResponse(async (send) => {
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
     let errorMessage: string | undefined;
 
     try {
-      await streamWeatherChat(message, send, usage, model);
+      await streamWeatherChat(message, send, usage, model, userId);
     } catch (error) {
       success = false;
       errorMessage = formatServerError(error);

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { calculateCost } from "./costs";
+import { logger } from "./logger";
 
 export type AgentType = "weather" | "research" | "rag" | "multi-agent";
 
@@ -88,8 +89,10 @@ async function checkAndAlert(userId: string) {
     const supabase = getAdminClient();
     if (!supabase) return;
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const todayStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 
     const { data } = await supabase
       .from("usage_logs")
@@ -107,13 +110,14 @@ async function checkAndAlert(userId: string) {
     if (dailyTotal > DAILY_ALERT_THRESHOLD) {
       // Log to console for now
       // In production: send email via SendGrid or Resend
-      console.warn(
-        `⚠️ COST ALERT: User ${userId} has spent ` +
-          `$${dailyTotal.toFixed(4)} today`,
-      );
+      logger.warn("Daily cost threshold exceeded", {
+        userId,
+        dailyTotal,
+        threshold: DAILY_ALERT_THRESHOLD,
+      });
     }
   } catch (err) {
-    console.error("Cost alert check failed silently:", err);
+    logger.error("Cost alert check failed", { error: err });
   }
 }
 
@@ -121,9 +125,7 @@ export async function logUsage(params: LogUsageParams): Promise<UsageLog | null>
   try {
     const supabase = getAdminClient();
     if (!supabase) {
-      console.error(
-        "Usage log error: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
-      );
+      logger.error("Usage log skipped: missing Supabase admin credentials");
       return null;
     }
 
@@ -152,7 +154,7 @@ export async function logUsage(params: LogUsageParams): Promise<UsageLog | null>
       .single();
 
     if (error) {
-      console.error("Usage log error:", error);
+      logger.error("Usage log insert failed", { error });
       return null;
     }
 
@@ -161,7 +163,7 @@ export async function logUsage(params: LogUsageParams): Promise<UsageLog | null>
     return data as UsageLog;
   } catch (err) {
     // Never let logging break the agent
-    console.error("Usage logger failed silently:", err);
+    logger.error("Usage logger failed", { error: err });
     return null;
   }
 }

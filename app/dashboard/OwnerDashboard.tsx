@@ -405,10 +405,6 @@ export function OwnerDashboard({
   const busy = isLoading;
 
   useEffect(() => {
-    setStats(initialStats);
-  }, [initialStats]);
-
-  useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       if (!filterBarRef.current?.contains(event.target as Node)) {
         setOpenMenu(null);
@@ -544,12 +540,32 @@ export function OwnerDashboard({
                 <CheckRow
                   checked={query.scope === "all"}
                   label="All users"
-                  onToggle={() => applyQuery({ scope: "all" as UsageScope }, true)}
+                  onToggle={() =>
+                    applyQuery(
+                      {
+                        scope: "all" as UsageScope,
+                        agents: [],
+                        models: [],
+                        statuses: [],
+                      },
+                      true,
+                    )
+                  }
                 />
                 <CheckRow
                   checked={query.scope === "me"}
                   label="My usage"
-                  onToggle={() => applyQuery({ scope: "me" as UsageScope }, true)}
+                  onToggle={() =>
+                    applyQuery(
+                      {
+                        scope: "me" as UsageScope,
+                        agents: [],
+                        models: [],
+                        statuses: [],
+                      },
+                      true,
+                    )
+                  }
                 />
               </FilterDropdown>
             ) : null}
@@ -681,11 +697,34 @@ export function OwnerDashboard({
         <div className={busy ? "pointer-events-none opacity-60" : ""}>
           {!hasCalls ? (
             <section className="mt-8 rounded-[18px] border border-white/[0.06] bg-[#101826] px-6 py-16 text-center">
-              <h2 className="text-lg font-medium text-white">No matching usage</h2>
-              <p className="mt-2 text-sm text-zinc-500">
-                Nothing is logged for these filters yet. Run an agent or widen the
-                selection.
+              <h2 className="text-lg font-medium text-white">
+                {stats.sourceCallCount === 0 && query.scope === "me"
+                  ? "No usage on this account"
+                  : "No matching usage"}
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
+                {stats.sourceCallCount === 0 && query.scope === "me"
+                  ? isOwner && (stats.allUsersCallCount ?? 0) > 0
+                    ? `Chats before sign-in are listed under All users as Guest (${stats.allUsersCallCount} ${stats.allUsersCallCount === 1 ? "call" : "calls"}). Send a message while signed in to track it here.`
+                    : "Send a message while signed in to start tracking usage for this account. Guest chats are not counted here."
+                  : "Nothing is logged for these filters yet. Run an agent or widen the selection."}
               </p>
+              {isOwner && query.scope === "me" && stats.sourceCallCount === 0 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    applyQuery({
+                      scope: "all",
+                      agents: [],
+                      models: [],
+                      statuses: [],
+                    })
+                  }
+                  className="mt-5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-200 transition hover:border-orange-400/40 hover:text-white"
+                >
+                  View all users
+                </button>
+              ) : null}
             </section>
           ) : (
             <>
@@ -701,10 +740,33 @@ export function OwnerDashboard({
                     spark={costSpark}
                     sparkColor="#22c55e"
                   />
+                  {query.range !== "today" ? (
+                    <MetricCard
+                      label="Today"
+                      value={formatCost(stats.todayCost)}
+                      hint="UTC calendar day, independent of range"
+                      spark={costSpark}
+                      sparkColor="#22c55e"
+                    />
+                  ) : null}
+                  {query.range !== "month" ? (
+                    <MetricCard
+                      label="This month"
+                      value={formatCost(stats.thisMonthCost)}
+                      hint="UTC month to date, independent of range"
+                      spark={costSpark}
+                      sparkColor="#38bdf8"
+                    />
+                  ) : null}
                   <MetricCard
                     label="API calls"
                     value={stats.totalCalls.toLocaleString()}
-                    hint={`${formatCost(stats.costPerCall)} average / call`}
+                    hint={
+                      stats.billableCalls > 0 &&
+                      stats.billableCalls !== stats.totalCalls
+                        ? `${formatCost(stats.costPerCall)} avg / billed call`
+                        : `${formatCost(stats.costPerCall)} average / call`
+                    }
                     spark={callSpark}
                     sparkColor="#3b82f6"
                   />
@@ -920,6 +982,7 @@ export function OwnerDashboard({
                       <th className="px-5 py-3 font-medium">Email</th>
                       <th className="px-3 py-3 font-medium">User</th>
                       <th className="px-3 py-3 font-medium">Range calls</th>
+                      <th className="px-3 py-3 font-medium">Range tokens</th>
                       <th className="px-3 py-3 font-medium">Range cost</th>
                       <th className="px-3 py-3 font-medium">Lifetime</th>
                       <th className="px-3 py-3 font-medium">Status</th>
@@ -944,6 +1007,9 @@ export function OwnerDashboard({
                           </p>
                         </td>
                         <td className="px-3 py-3">{row.periodCalls}</td>
+                        <td className="px-3 py-3">
+                          {formatTokens(row.periodTokens)}
+                        </td>
                         <td className="px-3 py-3">{formatCost(row.periodCost)}</td>
                         <td className="px-3 py-3">{formatCost(row.lifetimeCost)}</td>
                         <td

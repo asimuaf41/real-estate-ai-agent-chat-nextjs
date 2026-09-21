@@ -59,9 +59,10 @@ export function calculateCost(
 
 // Format cost for display
 export function formatCost(costUsd: number): string {
-  if (costUsd < 0.001) return "<$0.001";
-  if (costUsd < 0.01) return `$${costUsd.toFixed(4)}`;
-  return `$${costUsd.toFixed(3)}`;
+  const cost = Number(costUsd);
+  if (!Number.isFinite(cost) || cost <= 0) return "$0";
+  if (cost < 1) return `$${cost.toFixed(4)}`;
+  return `$${cost.toFixed(2)}`;
 }
 
 // Calculate monthly projection from daily average

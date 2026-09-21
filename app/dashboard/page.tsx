@@ -40,6 +40,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <OwnerDashboard
+      key={dashboardPath}
       initialStats={stats}
       viewerEmail={user.email ?? ""}
       viewerName={displayName}

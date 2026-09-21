@@ -6,6 +6,7 @@ import {
   normalizeMessages,
   readJsonBody,
   resolveRequestUserId,
+  validateNormalizedMessages,
 } from "@/lib/server/utils/request";
 import {
   createSseErrorResponse,
@@ -32,7 +33,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const userId = await resolveRequestUserId();
+  const validation = validateNormalizedMessages(messages);
+  if (!validation.valid) {
+    return createSseErrorResponse(new Error(validation.error));
+  }
+
+  const userId = await resolveRequestUserId(request);
   const blocked = await rejectIfOverSpendCap(userId);
   if (blocked) return blocked;
   const model = selectModel("multi-agent", latestUserMessageLength(messages));
