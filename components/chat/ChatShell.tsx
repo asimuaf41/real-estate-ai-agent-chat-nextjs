@@ -5,6 +5,7 @@ import { useState, type FormEvent, type KeyboardEvent, type ReactNode, type RefO
 import { UserMenu } from "@/app/components/UserMenu";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoginModal } from "@/components/LoginModal";
+import { ReliabilityNotes } from "@/components/ReliabilityNotes";
 import { SearchLimitBanner } from "@/components/SearchLimitBanner";
 import { useSearchLimit } from "@/hooks/useSearchLimit";
 import type { AssistantConfig, ChatMessage } from "@/lib/chat/types";
@@ -281,7 +282,10 @@ export function ChatShell({
             </div>
             <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end lg:max-w-[min(100%,34rem)]">
               <UserMenu onSignInClick={() => setShowModal(true)} />
-              <AssistantSwitcher />
+              <div className="flex items-center justify-end gap-2">
+                <ReliabilityNotes />
+                <AssistantSwitcher />
+              </div>
             </div>
           </div>
         </header>
