@@ -207,13 +207,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950/95 p-6 shadow-2xl shadow-black/40 sm:p-8"
+        className="relative z-10 w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-lg sm:p-8"
         onClick={(event) => event.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-400 transition hover:text-zinc-100"
+          className="focus-ring absolute top-4 right-4 rounded-lg border border-border bg-surface-muted p-2 text-muted transition hover:text-foreground"
           aria-label="Close"
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
@@ -226,26 +226,26 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
           </svg>
         </button>
 
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300/80">
-          Free limit reached
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+          Continue with Agent Desk
         </p>
-        <h2 id={titleId} className="mt-3 pr-8 text-2xl font-semibold text-white">
-          Sign up to continue
+        <h2 id={titleId} className="mt-3 pr-8 text-2xl font-semibold text-foreground">
+          Sign in to keep going
         </h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-400">
-          You have used your 3 free searches. Create an account for unlimited
-          access and saved memory.
+        <p className="mt-2 text-sm leading-6 text-muted">
+          You’ve used your free searches. Create an account for unlimited access
+          and saved memory.
         </p>
 
-        <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/20 p-1">
+        <div className="mt-6 grid grid-cols-2 gap-2 rounded-xl border border-border bg-surface-muted p-1">
           <button
             type="button"
             onClick={() => switchMode("login")}
             className={[
-              "rounded-xl px-3 py-2 text-sm font-medium transition",
+              "rounded-lg px-3 py-2 text-sm font-medium transition",
               mode === "login"
-                ? "bg-amber-500/20 text-amber-100"
-                : "text-zinc-400 hover:text-zinc-200",
+                ? "bg-surface text-foreground shadow-sm"
+                : "text-muted hover:text-foreground",
             ].join(" ")}
           >
             Sign in
@@ -254,10 +254,10 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             type="button"
             onClick={() => switchMode("signup")}
             className={[
-              "rounded-xl px-3 py-2 text-sm font-medium transition",
+              "rounded-lg px-3 py-2 text-sm font-medium transition",
               mode === "signup"
-                ? "bg-amber-500/20 text-amber-100"
-                : "text-zinc-400 hover:text-zinc-200",
+                ? "bg-surface text-foreground shadow-sm"
+                : "text-muted hover:text-foreground",
             ].join(" ")}
           >
             Sign up
@@ -266,7 +266,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
 
         <form onSubmit={handleEmailAuth} className="mt-6 space-y-4">
           <label className="block space-y-2">
-            <span className="text-sm text-zinc-300">Email</span>
+            <span className="text-sm text-muted">Email</span>
             <input
               type="email"
               name="email"
@@ -274,13 +274,13 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-amber-400/40 focus:ring-2 focus:ring-amber-500/20"
+              className="focus-ring w-full rounded-xl border border-border bg-surface-muted px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-subtle"
               placeholder="you@company.com"
             />
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm text-zinc-300">Password</span>
+            <span className="text-sm text-muted">Password</span>
             <input
               type="password"
               name="password"
@@ -291,7 +291,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
               minLength={6}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-amber-400/40 focus:ring-2 focus:ring-amber-500/20"
+              className="focus-ring w-full rounded-xl border border-border bg-surface-muted px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-subtle"
               placeholder="••••••••"
             />
           </label>
@@ -299,7 +299,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
           {error ? (
             <p
               role="alert"
-              className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
+              className="rounded-xl border border-danger/30 bg-danger-muted px-4 py-3 text-sm text-danger"
             >
               {error}
             </p>
@@ -308,7 +308,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
           {info ? (
             <p
               role="status"
-              className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"
+              className="rounded-xl border border-success/30 bg-success-muted px-4 py-3 text-sm text-success"
             >
               {info}
             </p>
@@ -317,7 +317,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-2xl bg-linear-to-r from-amber-500 to-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-brand-foreground shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting
               ? mode === "login"
@@ -333,7 +333,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
               type="button"
               onClick={handleResendConfirmation}
               disabled={isSubmitting || isResending}
-              className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:border-amber-500/30 hover:bg-amber-500/5 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl border border-border bg-surface-muted px-4 py-3 text-sm font-medium text-foreground transition hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isResending
                 ? "Sending confirmation email..."
@@ -343,18 +343,18 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
         </form>
 
         <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-white/10" />
-          <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs uppercase tracking-[0.18em] text-subtle">
             or
           </span>
-          <div className="h-px flex-1 bg-white/10" />
+          <div className="h-px flex-1 bg-border" />
         </div>
 
         <button
           type="button"
           onClick={handleGoogleAuth}
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-medium text-zinc-100 transition hover:border-amber-500/30 hover:bg-amber-500/5 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-muted px-4 py-3 text-sm font-medium text-foreground transition hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
         >
           <GoogleIcon />
           Continue with Google

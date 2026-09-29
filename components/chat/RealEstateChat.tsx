@@ -29,6 +29,7 @@ export function RealEstateChat() {
     bottomRef,
     sendMessage,
     stopStream,
+    retryLast,
     handleSubmit,
     handleKeyDown,
   } = useChatStream({
@@ -66,6 +67,7 @@ export function RealEstateChat() {
       onKeyDown={handleKeyDown}
       onPromptSelect={(prompt) => void sendMessage(prompt)}
       onStop={stopStream}
+      onRetry={() => void retryLast()}
       beforeMessages={
         <DocumentsPanel
           documents={documents}

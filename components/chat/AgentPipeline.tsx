@@ -217,24 +217,30 @@ export function AgentPipeline({
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-medium text-zinc-200">
-          Orchestration pipeline
+        <h3 className="text-sm font-medium text-foreground">
+          {compact ? "Agents" : "Orchestration pipeline"}
         </h3>
         <p
           className={[
             "text-[11px] uppercase tracking-[0.18em]",
             phase === "Running"
-              ? "text-emerald-300"
+              ? "text-accent-emerald"
               : phase === "Complete"
-                ? "text-emerald-400/80"
-                : "text-zinc-500",
+                ? "text-success"
+                : "text-subtle",
           ].join(" ")}
         >
           {phase}
         </p>
       </div>
 
-      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+      <ol
+        className={
+          compact
+            ? "flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] xl:grid xl:grid-cols-6 xl:overflow-visible [&::-webkit-scrollbar]:hidden"
+            : "grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6"
+        }
+      >
         {MULTI_AGENT_PIPELINE.map((agent, index) => {
           const status = resolved[agent.id] ?? "idle";
           const isWorking = status === "working";
@@ -242,37 +248,38 @@ export function AgentPipeline({
           const isWaiting = status === "waiting";
 
           return (
-            <li key={agent.id} className="relative">
-              {index < MULTI_AGENT_PIPELINE.length - 1 ? (
+            <li
+              key={agent.id}
+              className={compact ? "relative min-w-[8.5rem] shrink-0 xl:min-w-0" : "relative"}
+            >
+              {!compact && index < MULTI_AGENT_PIPELINE.length - 1 ? (
                 <span
                   className={[
                     "pointer-events-none absolute top-7 -right-1.5 z-10 hidden h-px w-3 xl:block",
-                    isDone ? "bg-emerald-400/50" : "bg-emerald-500/20",
+                    isDone ? "bg-accent-emerald/50" : "bg-accent-emerald/20",
                   ].join(" ")}
                   aria-hidden="true"
                 />
               ) : null}
               <div
                 className={[
-                  "h-full rounded-2xl border px-3 py-3 transition duration-300",
+                  "h-full rounded-xl border px-3 py-3 transition duration-(--duration-normal)",
                   isWorking
-                    ? "border-emerald-400/50 bg-emerald-500/10 shadow-[0_0_24px_rgba(16,185,129,0.12)]"
+                    ? "border-accent-emerald/50 bg-accent-emerald/10"
                     : isDone
-                      ? "border-emerald-500/30 bg-emerald-500/5"
+                      ? "border-accent-emerald/30 bg-accent-emerald/5"
                       : isWaiting
-                        ? "border-white/10 bg-black/20 opacity-80"
-                        : "border-white/10 bg-black/30",
+                        ? "border-border bg-surface-muted opacity-80"
+                        : "border-border bg-surface",
                 ].join(" ")}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span
                     className={[
-                      "inline-flex h-8 w-8 items-center justify-center rounded-xl border transition duration-300",
-                      isWorking
-                        ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-200"
-                        : isDone
-                          ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
-                          : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+                      "inline-flex h-8 w-8 items-center justify-center rounded-lg border transition duration-(--duration-normal)",
+                      isWorking || isDone
+                        ? "border-accent-emerald/30 bg-accent-emerald/15 text-accent-emerald"
+                        : "border-border bg-surface-muted text-accent-emerald",
                     ].join(" ")}
                   >
                     {agent.icon}
@@ -281,26 +288,26 @@ export function AgentPipeline({
                     className={[
                       "inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.14em]",
                       isWorking
-                        ? "text-emerald-300"
+                        ? "text-accent-emerald"
                         : isDone
-                          ? "text-emerald-400/80"
-                          : "text-zinc-500",
+                          ? "text-success"
+                          : "text-subtle",
                     ].join(" ")}
                   >
                     {isWorking ? (
                       <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-emerald opacity-70" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-emerald" />
                       </span>
                     ) : null}
                     {STATUS_LABEL[status]}
                   </span>
                 </div>
-                <p className="mt-3 text-sm font-medium text-zinc-100">
+                <p className="mt-3 text-sm font-medium text-foreground">
                   {agent.name}
                 </p>
                 {!compact ? (
-                  <p className="mt-1 text-xs leading-5 text-zinc-500">
+                  <p className="mt-1 text-xs leading-5 text-muted">
                     {agent.role}
                   </p>
                 ) : null}

@@ -24,24 +24,32 @@ export const webSearchAssistant: AssistantConfig = {
     "What are the best practices for RAG systems? Search and summarize.",
     "Research TypeScript 5 features and save the report.",
   ],
+  promptCards: [
+    {
+      title: "React & Next.js trends",
+      detail: "Research current frameworks and summarize the landscape.",
+      prompt:
+        "Research the latest trends in React and Next.js development in 2026.",
+    },
+    {
+      title: "AI agent tutorials",
+      detail: "Find YouTube videos on building agents with Claude.",
+      prompt: "Find YouTube tutorials on building AI agents with Claude.",
+    },
+    {
+      title: "RAG best practices",
+      detail: "Search and summarize retrieval-augmented generation guidance.",
+      prompt:
+        "What are the best practices for RAG systems? Search and summarize.",
+    },
+    {
+      title: "TypeScript 5 report",
+      detail: "Research features and save a markdown report.",
+      prompt: "Research TypeScript 5 features and save the report.",
+    },
+  ],
   theme: {
-    pageBackground:
-      "bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.12),_transparent_40%),linear-gradient(180deg,#070b14_0%,#0b1220_45%,#070b14_100%)]",
-    shellBorder: "border-amber-500/15",
-    headerBackground:
-      "bg-linear-to-r from-[#1a1408] via-[#141820] to-[#1a1020] border-b border-white/10",
-    headerEyebrow: "text-amber-300/80",
-    headerDescription: "text-zinc-400",
-    accentText: "text-amber-300",
-    accentBorder: "border-amber-500/30",
-    accentRing: "focus:ring-amber-500/20 focus:border-amber-400/50",
-    accentGradient: "from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400",
-    accentShadow: "shadow-amber-500/20",
-    userBubble: "bg-linear-to-br from-amber-600 to-orange-600 text-white",
-    assistantBubble: "border border-white/10 bg-zinc-900/80 text-zinc-100",
-    emptyStateHover: "hover:border-amber-500/30 hover:bg-amber-500/5",
-    chipHover: "hover:border-amber-500/30 hover:text-amber-200",
-    inputFocus: "focus:ring-amber-500/20 focus:border-amber-400/40",
+    accent: "amber",
   },
 };
 
@@ -68,24 +76,30 @@ export const realEstateAssistant: AssistantConfig = {
     "Do you have anything with a pool?",
     "Tell me about properties built after 2015.",
   ],
+  promptCards: [
+    {
+      title: "Buckhead listings",
+      detail: "Ask what’s available in Buckhead right now.",
+      prompt: "What properties do you have in Buckhead?",
+    },
+    {
+      title: "Under $400k",
+      detail: "Match budget to indexed Atlanta inventory.",
+      prompt: "I have a budget of $400,000, what can I afford?",
+    },
+    {
+      title: "Homes with a pool",
+      detail: "Filter the property database for pools.",
+      prompt: "Do you have anything with a pool?",
+    },
+    {
+      title: "Built after 2015",
+      detail: "Find newer construction in the RAG index.",
+      prompt: "Tell me about properties built after 2015.",
+    },
+  ],
   theme: {
-    pageBackground:
-      "bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_40%),linear-gradient(180deg,#070b14_0%,#0b1220_45%,#070b14_100%)]",
-    shellBorder: "border-cyan-500/15",
-    headerBackground:
-      "bg-linear-to-r from-[#081420] via-[#101820] to-[#081820] border-b border-white/10",
-    headerEyebrow: "text-cyan-300/80",
-    headerDescription: "text-zinc-400",
-    accentText: "text-cyan-300",
-    accentBorder: "border-cyan-500/30",
-    accentRing: "focus:ring-cyan-500/20 focus:border-cyan-400/50",
-    accentGradient: "from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400",
-    accentShadow: "shadow-cyan-500/20",
-    userBubble: "bg-linear-to-br from-cyan-600 to-sky-600 text-white",
-    assistantBubble: "border border-white/10 bg-zinc-900/80 text-zinc-100",
-    emptyStateHover: "hover:border-cyan-500/30 hover:bg-cyan-500/5",
-    chipHover: "hover:border-cyan-500/30 hover:text-cyan-200",
-    inputFocus: "focus:ring-cyan-500/20 focus:border-cyan-400/40",
+    accent: "cyan",
   },
 };
 
@@ -112,24 +126,30 @@ export const weatherAssistant: AssistantConfig = {
     "Show me all my saved weather reports.",
     "Get weather for Atlanta and save the report.",
   ],
+  promptCards: [
+    {
+      title: "Dubai conditions",
+      detail: "Live weather for Dubai right now.",
+      prompt: "What is the weather in Dubai right now?",
+    },
+    {
+      title: "Lahore + save",
+      detail: "Fetch weather and store it as a report.",
+      prompt: "Check the weather in Lahore and save it as a report.",
+    },
+    {
+      title: "Saved reports",
+      detail: "List weather reports you’ve saved.",
+      prompt: "Show me all my saved weather reports.",
+    },
+    {
+      title: "Atlanta report",
+      detail: "Get Atlanta weather and export a report.",
+      prompt: "Get weather for Atlanta and save the report.",
+    },
+  ],
   theme: {
-    pageBackground:
-      "bg-[radial-gradient(circle_at_top,_rgba(139,92,246,0.14),_transparent_40%),linear-gradient(180deg,#070b14_0%,#0b1220_45%,#070b14_100%)]",
-    shellBorder: "border-violet-500/15",
-    headerBackground:
-      "bg-linear-to-r from-[#120f20] via-[#141820] to-[#181028] border-b border-white/10",
-    headerEyebrow: "text-violet-300/80",
-    headerDescription: "text-zinc-400",
-    accentText: "text-violet-300",
-    accentBorder: "border-violet-500/30",
-    accentRing: "focus:ring-violet-500/20 focus:border-violet-400/50",
-    accentGradient: "from-violet-500 to-purple-500 hover:from-violet-400 hover:to-purple-400",
-    accentShadow: "shadow-violet-500/20",
-    userBubble: "bg-linear-to-br from-violet-600 to-purple-600 text-white",
-    assistantBubble: "border border-white/10 bg-zinc-900/80 text-zinc-100",
-    emptyStateHover: "hover:border-violet-500/30 hover:bg-violet-500/5",
-    chipHover: "hover:border-violet-500/30 hover:text-violet-200",
-    inputFocus: "focus:ring-violet-500/20 focus:border-violet-400/40",
+    accent: "violet",
   },
 };
 
@@ -138,9 +158,9 @@ export const multiAgentAssistant: AssistantConfig = {
   path: "/",
   label: "Multi-Agent",
   eyebrow: "Orchestrated Intelligence",
-  title: "Multi-Agent Research Desk",
+  title: "Multi-Agent Desk",
   description:
-    "An orchestrator coordinates 5 specialists — preferences, web research, property database, analysis, and report writing — to deliver a personalized, client-ready report.",
+    "Coordinate specialists for research, listings, analysis, and a client-ready report.",
   placeholder:
     "e.g. Research the Atlanta market, analyze our top 5 properties, write a report, and email it to the client...",
   submitLabel: "Run Agents",
@@ -182,24 +202,7 @@ export const multiAgentAssistant: AssistantConfig = {
     },
   ],
   theme: {
-    pageBackground:
-      "bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_40%),linear-gradient(180deg,#070b14_0%,#0b1220_45%,#070b14_100%)]",
-    shellBorder: "border-emerald-500/15",
-    headerBackground:
-      "bg-linear-to-r from-[#08140f] via-[#101820] to-[#08180f] border-b border-white/10",
-    headerEyebrow: "text-emerald-300/80",
-    headerDescription: "text-zinc-400",
-    accentText: "text-emerald-300",
-    accentBorder: "border-emerald-500/30",
-    accentRing: "focus:ring-emerald-500/20 focus:border-emerald-400/50",
-    accentGradient:
-      "from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400",
-    accentShadow: "shadow-emerald-500/20",
-    userBubble: "bg-linear-to-br from-emerald-600 to-teal-600 text-white",
-    assistantBubble: "border border-white/10 bg-zinc-900/80 text-zinc-100",
-    emptyStateHover: "hover:border-emerald-500/30 hover:bg-emerald-500/5",
-    chipHover: "hover:border-emerald-500/30 hover:text-emerald-200",
-    inputFocus: "focus:ring-emerald-500/20 focus:border-emerald-400/40",
+    accent: "emerald",
   },
 };
 

@@ -3,7 +3,7 @@ import { multiAgentAssistant } from "@/config/assistants";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: `${multiAgentAssistant.title} · AI Agent Workspace`,
+  title: multiAgentAssistant.title,
   description: multiAgentAssistant.description,
 };
 

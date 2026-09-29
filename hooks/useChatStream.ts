@@ -169,17 +169,18 @@ export function useChatStream({
   }, []);
 
   const sendMessage = useCallback(
-    async (messageOverride?: string) => {
+    async (messageOverride?: string, historyOverride?: ChatMessage[]) => {
       const nextContent = (messageOverride ?? input).trim();
       if (!nextContent || isStreaming) return;
 
+      const history = historyOverride ?? messages;
       const userMessage: ChatMessage = { role: "user", content: nextContent };
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
       setError("");
-      setMessages((previous) => [
-        ...previous,
+      setMessages([
+        ...history,
         userMessage,
         createAssistantMessage(supportsTools),
       ]);
@@ -192,7 +193,7 @@ export function useChatStream({
           credentials: "include",
           headers: await chatRequestHeaders(),
           body: JSON.stringify(
-            buildRequestBody(requestMode, nextContent, messages, requestExtras),
+            buildRequestBody(requestMode, nextContent, history, requestExtras),
           ),
           signal: abortController.signal,
         });
@@ -260,6 +261,21 @@ export function useChatStream({
     ],
   );
 
+  const retryLast = useCallback(async () => {
+    if (isStreaming) return;
+
+    const trimmed = [...messages];
+    if (trimmed.at(-1)?.role === "assistant") {
+      trimmed.pop();
+    }
+    const lastUser = trimmed.at(-1);
+    if (lastUser?.role !== "user") return;
+    const content = lastUser.content;
+    trimmed.pop();
+    setError("");
+    await sendMessage(content, trimmed);
+  }, [isStreaming, messages, sendMessage]);
+
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -287,6 +303,7 @@ export function useChatStream({
     bottomRef,
     sendMessage,
     stopStream,
+    retryLast,
     handleSubmit,
     handleKeyDown,
     isEmpty: messages.length === 0,

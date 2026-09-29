@@ -25,22 +25,10 @@ export type StreamEvent = {
 
 export type RequestMode = "messages" | "message";
 
+export type AccentId = "amber" | "cyan" | "violet" | "emerald";
+
 export type AssistantTheme = {
-  pageBackground: string;
-  shellBorder: string;
-  headerBackground: string;
-  headerEyebrow: string;
-  headerDescription: string;
-  accentText: string;
-  accentBorder: string;
-  accentRing: string;
-  accentGradient: string;
-  accentShadow: string;
-  userBubble: string;
-  assistantBubble: string;
-  emptyStateHover: string;
-  chipHover: string;
-  inputFocus: string;
+  accent: AccentId;
 };
 
 export type PromptCard = {
@@ -62,7 +50,6 @@ export type AssistantConfig = {
   apiUrl: string;
   requestMode: RequestMode;
   quickPrompts: string[];
-  /** Optional rich prompt cards (used by multi-agent empty state). */
   promptCards?: PromptCard[];
   theme: AssistantTheme;
   supportsTools: boolean;

@@ -30,6 +30,7 @@ export function WebSearchChat() {
     bottomRef,
     sendMessage,
     stopStream,
+    retryLast,
     handleSubmit,
     handleKeyDown,
   } = useChatStream({
@@ -64,6 +65,7 @@ export function WebSearchChat() {
       onKeyDown={handleKeyDown}
       onPromptSelect={(prompt) => void sendMessage(prompt)}
       onStop={stopStream}
+      onRetry={() => void retryLast()}
       beforeMessages={
         <MemoryPanel
           memories={memories}

@@ -41,6 +41,7 @@ export function MultiAgentChat() {
     bottomRef,
     sendMessage,
     stopStream,
+    retryLast,
     handleSubmit,
     handleKeyDown,
   } = useChatStream({
@@ -70,17 +71,16 @@ export function MultiAgentChat() {
       onKeyDown={handleKeyDown}
       onPromptSelect={(prompt) => void sendMessage(prompt)}
       onStop={stopStream}
-      showReliabilityNotes={false}
+      onRetry={() => void retryLast()}
       showQuickPromptChips={false}
       inputRows={4}
-      shellMaxWidthClassName="max-w-7xl"
       beforeMessages={
         showLivePipeline ? (
-          <div className="sticky top-0 z-10 -mx-1 rounded-2xl border border-white/10 bg-zinc-950/90 px-3 py-3 backdrop-blur-md sm:px-4">
+          <div className="sticky top-0 z-10 rounded-xl border border-border bg-surface/95 px-3 py-3 shadow-sm backdrop-blur-md sm:px-4">
             <AgentPipeline
               statuses={statuses}
               isLive={isStreaming}
-              compact={isStreaming}
+              compact
             />
           </div>
         ) : null

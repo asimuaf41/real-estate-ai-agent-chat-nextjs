@@ -1,16 +1,17 @@
 import type { MemoryItem } from "@/lib/chat/memory-types";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 function MemorySkeleton() {
   return (
     <div className="space-y-3">
-      {Array.from({ length: 3 }).map((_, index) => (
-        <div
-          key={index}
-          className="animate-pulse rounded-2xl border border-white/10 bg-black/20 p-4"
-        >
-          <div className="h-3 w-24 rounded bg-white/10" />
-          <div className="mt-3 h-3 w-full rounded bg-white/10" />
-          <div className="mt-2 h-3 w-2/3 rounded bg-white/10" />
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div key={index} className="rounded-xl border border-border bg-surface p-4">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="mt-3 h-3 w-full" />
+          <Skeleton className="mt-2 h-3 w-2/3" />
         </div>
       ))}
     </div>
@@ -41,34 +42,29 @@ export function MemoryPanel({
   onDelete,
 }: MemoryPanelProps) {
   return (
-    <section className="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-4">
+    <Card className="border-accent-amber/20 bg-accent-amber/5" padding="md">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/80">
-            Long-Term Memory
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-amber">
+            Memory
           </p>
-          <h2 className="mt-1 text-sm font-medium text-zinc-100">
-            Saved research & session context
+          <h2 className="mt-1 text-sm font-medium text-foreground">
+            Saved research context
           </h2>
         </div>
-        {!isLoading ? (
-          <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-zinc-400">
-            {memories.length} saved
-          </span>
-        ) : null}
+        {!isLoading ? <Badge tone="neutral">{memories.length} saved</Badge> : null}
       </div>
 
       <div className="mt-4 space-y-3">
         {isLoading ? <MemorySkeleton /> : null}
 
         {!isLoading && error ? (
-          <p className="text-xs text-rose-400">{error}</p>
+          <p className="text-xs text-danger">{error}</p>
         ) : null}
 
         {!isLoading && !error && memories.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-white/10 bg-black/20 px-4 py-5 text-sm text-zinc-500">
-            No memories saved yet. Research something and the agent will store
-            important findings here for future sessions.
+          <p className="rounded-xl border border-dashed border-border bg-surface px-4 py-4 text-sm text-muted">
+            No memories yet. Research something and key findings will appear here.
           </p>
         ) : null}
 
@@ -76,35 +72,34 @@ export function MemoryPanel({
           ? memories.map((memory) => (
               <article
                 key={memory.id}
-                className="rounded-2xl border border-white/10 bg-zinc-950/70 p-4 shadow-lg shadow-black/20"
+                className="rounded-xl border border-border bg-surface p-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
-                        {memory.category}
-                      </span>
-                      <span className="text-[11px] text-zinc-500">
+                      <Badge tone="warning">{memory.category}</Badge>
+                      <span className="text-[11px] text-subtle">
                         {formatDate(memory.date)}
                       </span>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-zinc-200">
+                    <p className="mt-3 text-sm leading-6 text-muted">
                       {memory.content}
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="destructive"
+                    size="sm"
                     onClick={() => void onDelete(memory.id)}
-                    className="shrink-0 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/20"
                     aria-label={`Delete memory ${memory.id}`}
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </article>
             ))
           : null}
       </div>
-    </section>
+    </Card>
   );
 }

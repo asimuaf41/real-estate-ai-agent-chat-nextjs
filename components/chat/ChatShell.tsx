@@ -1,25 +1,34 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent, type KeyboardEvent, type ReactNode, type RefObject } from "react";
-import { UserMenu } from "@/app/components/UserMenu";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { LoginModal } from "@/components/LoginModal";
-import { ReliabilityNotes } from "@/components/ReliabilityNotes";
+import { AppShell } from "@/components/layout/AppShell";
 import { SearchLimitBanner } from "@/components/SearchLimitBanner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { Textarea } from "@/components/ui/Input";
 import { useSearchLimit } from "@/hooks/useSearchLimit";
-import type { AssistantConfig, ChatMessage } from "@/lib/chat/types";
-import { AssistantSwitcher } from "./AssistantSwitcher";
+import type { AssistantConfig, ChatMessage, PromptCard } from "@/lib/chat/types";
+import { accentClasses } from "@/lib/ui/accent";
+import { cn } from "@/lib/ui/cn";
+import { AssistantEmptyState } from "./AssistantEmptyState";
+import { MarkdownContent } from "./MarkdownContent";
 import { TypingDots } from "./TypingDots";
 
 type ChatMessageListProps = {
   messages: ChatMessage[];
   isStreaming: boolean;
-  theme: AssistantConfig["theme"];
-  emptyTitle: string;
-  emptyDescription: string;
-  quickPrompts: string[];
-  onPromptSelect: (prompt: string) => void;
+  accent: AssistantConfig["theme"]["accent"];
   renderToolEvents?: (events: ChatMessage["toolEvents"]) => ReactNode;
   renderAssistantContent?: (args: {
     content: string;
@@ -31,8 +40,8 @@ type ChatMessageListProps = {
 function MessageSkeleton() {
   return (
     <div className="space-y-2 py-1">
-      <div className="h-3 w-40 animate-pulse rounded bg-white/10" />
-      <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+      <Skeleton className="h-3 w-40" />
+      <Skeleton className="h-3 w-28" />
     </div>
   );
 }
@@ -40,39 +49,11 @@ function MessageSkeleton() {
 export function ChatMessageList({
   messages,
   isStreaming,
-  theme,
-  emptyTitle,
-  emptyDescription,
-  quickPrompts,
-  onPromptSelect,
+  accent,
   renderToolEvents,
   renderAssistantContent,
 }: ChatMessageListProps) {
-  if (messages.length === 0) {
-    return (
-      <section className="flex h-full flex-col items-center justify-center px-2">
-        <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-zinc-900/50 p-8 text-center shadow-2xl shadow-black/20 backdrop-blur-sm">
-          <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${theme.accentText}`}>
-            Premium AI Workspace
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold text-white">{emptyTitle}</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-400">{emptyDescription}</p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {quickPrompts.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => onPromptSelect(prompt)}
-                className={`rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-zinc-300 transition hover:-translate-y-0.5 ${theme.emptyStateHover}`}
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const accentStyle = accentClasses[accent];
 
   return (
     <>
@@ -82,41 +63,43 @@ export function ChatMessageList({
           !isUser && isStreaming && index === messages.length - 1;
         const hasToolEvents = Boolean(message.toolEvents?.length);
         const hasContent = Boolean(message.content || isLastAssistantStreaming);
-        const useReportLayout = !isUser && Boolean(renderAssistantContent);
+        const useCustomContent = !isUser && Boolean(renderAssistantContent);
 
         return (
           <div
             key={`${message.role}-${index}`}
-            className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+            className={cn("flex", isUser ? "justify-end" : "justify-start")}
           >
             <div
-              className={[
-                useReportLayout
+              className={cn(
+                useCustomContent
                   ? "w-full max-w-full space-y-3"
-                  : "max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-7 shadow-lg sm:max-w-[78%]",
+                  : "max-w-[min(100%,42rem)] rounded-xl px-4 py-3 text-sm leading-7 shadow-sm",
                 isUser
-                  ? `rounded-2xl rounded-br-md px-4 py-3 text-sm leading-7 shadow-lg ${theme.userBubble}`
-                  : useReportLayout
+                  ? cn("rounded-br-md text-white", accentStyle.userBubble)
+                  : useCustomContent
                     ? ""
-                    : `rounded-bl-md ${theme.assistantBubble}`,
-              ].join(" ")}
+                    : "rounded-bl-md border border-border bg-surface text-foreground",
+              )}
             >
               {!isUser && hasToolEvents && renderToolEvents
                 ? renderToolEvents(message.toolEvents)
                 : null}
 
               {hasContent ? (
-                useReportLayout && renderAssistantContent ? (
+                useCustomContent && renderAssistantContent ? (
                   renderAssistantContent({
                     content: message.content,
                     isStreaming: isLastAssistantStreaming,
                     message,
                   })
+                ) : isUser ? (
+                  <p className="whitespace-pre-wrap">{message.content}</p>
                 ) : (
-                  <p className="whitespace-pre-wrap">
-                    {message.content}
+                  <div>
+                    <MarkdownContent content={message.content} />
                     {isLastAssistantStreaming ? <TypingDots /> : null}
-                  </p>
+                  </div>
                 )
               ) : !hasToolEvents ? (
                 <MessageSkeleton />
@@ -126,109 +109,6 @@ export function ChatMessageList({
         );
       })}
     </>
-  );
-}
-
-type ChatInputProps = {
-  input: string;
-  isStreaming: boolean;
-  placeholder: string;
-  submitLabel: string;
-  streamingLabel: string;
-  stopLabel: string;
-  theme: AssistantConfig["theme"];
-  quickPrompts: string[];
-  showQuickPrompts: boolean;
-  inputRows?: number;
-  composerClassName?: string;
-  onInputChange: (value: string) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
-  onPromptFill: (prompt: string) => void;
-  onStop: () => void;
-};
-
-export function ChatInput({
-  input,
-  isStreaming,
-  placeholder,
-  submitLabel,
-  streamingLabel,
-  stopLabel,
-  theme,
-  quickPrompts,
-  showQuickPrompts,
-  inputRows = 2,
-  composerClassName,
-  onInputChange,
-  onSubmit,
-  onKeyDown,
-  onPromptFill,
-  onStop,
-}: ChatInputProps) {
-  const minHeight = inputRows >= 3 ? "min-h-[96px]" : "min-h-[56px]";
-
-  return (
-    <section className="space-y-3 border-t border-white/10 pt-4">
-      {showQuickPrompts ? (
-        <div className="flex flex-wrap gap-2">
-          {quickPrompts.slice(0, 3).map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => onPromptFill(prompt)}
-              disabled={isStreaming}
-              className={`rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs font-medium text-zinc-400 transition disabled:cursor-not-allowed disabled:opacity-50 ${theme.chipHover}`}
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <form
-        onSubmit={onSubmit}
-        className={
-          composerClassName ??
-          "flex flex-col gap-3 sm:flex-row sm:items-end"
-        }
-      >
-        <textarea
-          value={input}
-          onChange={(event) => onInputChange(event.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder}
-          disabled={isStreaming}
-          rows={inputRows}
-          aria-label="Message"
-          className={`max-h-48 w-full flex-1 resize-y rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm leading-6 text-zinc-100 outline-none transition placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-60 ${minHeight} ${theme.inputFocus}`}
-        />
-        {isStreaming ? (
-          <button
-            type="button"
-            onClick={onStop}
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/15 px-6 text-sm font-semibold text-rose-200 shadow-lg transition hover:-translate-y-0.5 hover:bg-rose-500/25 sm:h-14"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
-            </span>
-            {stopLabel}
-          </button>
-        ) : (
-          <button
-            type="submit"
-            disabled={!input.trim()}
-            className={`inline-flex h-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-r px-6 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 sm:h-14 ${theme.accentGradient} ${theme.accentShadow}`}
-          >
-            {submitLabel}
-          </button>
-        )}
-      </form>
-      {isStreaming ? (
-        <p className={`text-xs ${theme.accentText}`}>{streamingLabel}</p>
-      ) : null}
-    </section>
   );
 }
 
@@ -244,6 +124,7 @@ type ChatShellProps = {
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onPromptSelect: (prompt: string) => void;
   onStop: () => void;
+  onRetry?: () => void;
   beforeMessages?: ReactNode;
   renderEmptyState?: (onPromptSelect: (prompt: string) => void) => ReactNode;
   renderToolEvents?: (events: ChatMessage["toolEvents"]) => ReactNode;
@@ -252,12 +133,18 @@ type ChatShellProps = {
     isStreaming: boolean;
     message: ChatMessage;
   }) => ReactNode;
-  showReliabilityNotes?: boolean;
-  /** Defaults to true when the conversation already has messages. */
   showQuickPromptChips?: boolean;
   inputRows?: number;
-  shellMaxWidthClassName?: string;
 };
+
+function promptsToCards(config: AssistantConfig): PromptCard[] {
+  if (config.promptCards?.length) return config.promptCards;
+  return config.quickPrompts.map((prompt) => ({
+    title: prompt.split(/[.?!]/)[0]?.slice(0, 42) || "Try this",
+    detail: prompt.length > 90 ? `${prompt.slice(0, 90)}…` : prompt,
+    prompt,
+  }));
+}
 
 export function ChatShell({
   config,
@@ -271,19 +158,22 @@ export function ChatShell({
   onKeyDown,
   onPromptSelect,
   onStop,
+  onRetry,
   beforeMessages,
   renderEmptyState,
   renderToolEvents,
   renderAssistantContent,
-  showReliabilityNotes = true,
   showQuickPromptChips,
-  inputRows,
-  shellMaxWidthClassName = "max-w-6xl",
+  inputRows = 3,
 }: ChatShellProps) {
   const router = useRouter();
-  const { theme } = config;
+  const accentStyle = accentClasses[config.theme.accent];
   const [showModal, setShowModal] = useState(false);
+  const [showJump, setShowJump] = useState(false);
   const { hasReachedLimit, incrementCount, resetCount } = useSearchLimit();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const stickToBottomRef = useRef(true);
 
   function consumeSearchOrPromptLogin() {
     if (hasReachedLimit()) {
@@ -298,6 +188,7 @@ export function ChatShell({
     event.preventDefault();
     if (!input.trim() || isStreaming) return;
     if (!consumeSearchOrPromptLogin()) return;
+    stickToBottomRef.current = true;
     onSubmit(event);
   }
 
@@ -308,6 +199,7 @@ export function ChatShell({
         event.preventDefault();
         return;
       }
+      stickToBottomRef.current = true;
     }
     onKeyDown(event);
   }
@@ -315,84 +207,183 @@ export function ChatShell({
   function handlePromptSelectGuarded(prompt: string) {
     if (isStreaming) return;
     if (!consumeSearchOrPromptLogin()) return;
+    stickToBottomRef.current = true;
     onPromptSelect(prompt);
   }
 
+  useEffect(() => {
+    function onWindowKeyDown(event: globalThis.KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        textareaRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onWindowKeyDown);
+    return () => window.removeEventListener("keydown", onWindowKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!stickToBottomRef.current) return;
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isStreaming, bottomRef]);
+
+  function handleScroll() {
+    const node = scrollRef.current;
+    if (!node) return;
+    const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
+    const nearBottom = distance < 96;
+    stickToBottomRef.current = nearBottom;
+    setShowJump(!nearBottom && messages.length > 0);
+  }
+
   const isEmpty = messages.length === 0;
+  const cards = promptsToCards(config);
 
   return (
-    <div className={`min-h-screen px-4 py-6 sm:px-6 lg:px-8 ${theme.pageBackground}`}>
-      <div
-        className={`mx-auto flex h-[calc(100vh-3rem)] w-full flex-col overflow-hidden rounded-[28px] border bg-zinc-950/70 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl ${shellMaxWidthClassName} ${theme.shellBorder}`}
-      >
-        <header className={`px-5 py-5 sm:px-6 ${theme.headerBackground}`}>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0 max-w-2xl flex-1">
-              <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${theme.headerEyebrow}`}>
-                {config.eyebrow}
-              </p>
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                {config.title}
-              </h1>
-              <p className={`mt-2 text-sm leading-6 ${theme.headerDescription}`}>
-                {config.description}
-              </p>
-            </div>
-            <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end lg:max-w-[min(100%,34rem)]">
-              <UserMenu onSignInClick={() => setShowModal(true)} />
-              <div className="flex items-center justify-end gap-2">
-                {showReliabilityNotes ? <ReliabilityNotes /> : null}
-                <AssistantSwitcher />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <ErrorBoundary>
-          <main className="flex flex-1 flex-col overflow-hidden p-4 sm:p-6">
-            <div className="flex-1 space-y-4 overflow-y-auto pr-1">
-              <SearchLimitBanner onSignInClick={() => setShowModal(true)} />
-              {beforeMessages}
-              {isEmpty && renderEmptyState ? (
+    <AppShell
+      title={config.title}
+      description={config.description}
+      eyebrow={config.eyebrow}
+      onSignInClick={() => setShowModal(true)}
+    >
+      <ErrorBoundary>
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6"
+          >
+            <SearchLimitBanner onSignInClick={() => setShowModal(true)} />
+            {beforeMessages}
+            {isEmpty ? (
+              renderEmptyState ? (
                 renderEmptyState(handlePromptSelectGuarded)
               ) : (
-                <ChatMessageList
-                  messages={messages}
-                  isStreaming={isStreaming}
-                  theme={theme}
-                  emptyTitle={`Start with ${config.label}`}
-                  emptyDescription={config.description}
-                  quickPrompts={config.quickPrompts}
+                <AssistantEmptyState
+                  eyebrow={config.eyebrow}
+                  title={`What can ${config.label} help with?`}
+                  description="Choose an example below, or write your own request."
+                  accent={config.theme.accent}
+                  promptCards={cards}
                   onPromptSelect={handlePromptSelectGuarded}
-                  renderToolEvents={renderToolEvents}
-                  renderAssistantContent={renderAssistantContent}
                 />
+              )
+            ) : (
+              <ChatMessageList
+                messages={messages}
+                isStreaming={isStreaming}
+                accent={config.theme.accent}
+                renderToolEvents={renderToolEvents}
+                renderAssistantContent={renderAssistantContent}
+              />
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          {showJump ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-28 flex justify-center lg:bottom-24">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="pointer-events-auto shadow-md"
+                onClick={() => {
+                  stickToBottomRef.current = true;
+                  setShowJump(false);
+                  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                Jump to latest
+              </Button>
+            </div>
+          ) : null}
+
+          <section className="border-t border-border bg-surface px-4 py-3 sm:px-6">
+            {(showQuickPromptChips ?? !isEmpty) ? (
+              <div className="mb-3 hidden flex-wrap gap-2 sm:flex">
+                {cards.slice(0, 3).map((card) => (
+                  <button
+                    key={card.title}
+                    type="button"
+                    disabled={isStreaming}
+                    onClick={() => onInputChange(card.prompt)}
+                    className={cn(
+                      "focus-ring rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs font-medium text-muted transition duration-(--duration-fast) disabled:opacity-50",
+                      accentStyle.chip,
+                    )}
+                  >
+                    {card.title}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <form
+              onSubmit={handleSubmitGuarded}
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+            >
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(event) => onInputChange(event.target.value)}
+                onKeyDown={handleKeyDownGuarded}
+                placeholder={config.placeholder}
+                disabled={isStreaming}
+                rows={inputRows}
+                aria-label="Message"
+                className={cn("max-h-40 sm:max-h-48", accentStyle.ring)}
+              />
+              {isStreaming ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="lg"
+                  onClick={onStop}
+                  className="shrink-0 sm:min-w-28"
+                >
+                  Stop
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="lg"
+                  variant="ghost"
+                  disabled={!input.trim()}
+                  className={cn(
+                    "shrink-0 border-0 text-white sm:min-w-28",
+                    accentStyle.solid,
+                  )}
+                >
+                  {config.submitLabel}
+                </Button>
               )}
-              <div ref={bottomRef} />
+            </form>
+
+            <div className="mt-2 flex items-center justify-between gap-3">
+              {isStreaming ? (
+                <p className={cn("text-xs", accentStyle.text)}>
+                  {config.streamingLabel}
+                </p>
+              ) : (
+                <p className="text-[11px] text-subtle">
+                  Enter to send · Shift+Enter for a new line
+                </p>
+              )}
             </div>
 
-            <ChatInput
-              input={input}
-              isStreaming={isStreaming}
-              placeholder={config.placeholder}
-              submitLabel={config.submitLabel}
-              streamingLabel={config.streamingLabel}
-              stopLabel="Stop"
-              theme={theme}
-              quickPrompts={config.quickPrompts}
-              showQuickPrompts={showQuickPromptChips ?? !isEmpty}
-              inputRows={inputRows}
-              onInputChange={onInputChange}
-              onSubmit={handleSubmitGuarded}
-              onKeyDown={handleKeyDownGuarded}
-              onPromptFill={onInputChange}
-              onStop={onStop}
-            />
-
-            {error ? <p className="mt-2 text-xs text-rose-400">{error}</p> : null}
-          </main>
-        </ErrorBoundary>
-      </div>
+            {error ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/30 bg-danger-muted px-3 py-2.5">
+                <p className="text-sm text-danger">{error}</p>
+                {onRetry ? (
+                  <Button type="button" variant="secondary" size="sm" onClick={onRetry}>
+                    Retry
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </section>
+        </div>
+      </ErrorBoundary>
 
       <LoginModal
         isOpen={showModal}
@@ -403,6 +394,6 @@ export function ChatShell({
           router.refresh();
         }}
       />
-    </div>
+    </AppShell>
   );
 }
