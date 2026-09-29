@@ -3,7 +3,7 @@ import type { AssistantConfig } from "@/lib/chat/types";
 
 export const webSearchAssistant: AssistantConfig = {
   id: "web-search",
-  path: "/",
+  path: "/web-search",
   label: "Web Search",
   eyebrow: "Research Intelligence",
   title: "Web Search Assistant",
@@ -135,7 +135,7 @@ export const weatherAssistant: AssistantConfig = {
 
 export const multiAgentAssistant: AssistantConfig = {
   id: "multi-agent",
-  path: "/multi-agent",
+  path: "/",
   label: "Multi-Agent",
   eyebrow: "Orchestrated Intelligence",
   title: "Multi-Agent Research Desk",
@@ -155,6 +155,31 @@ export const multiAgentAssistant: AssistantConfig = {
     "Find family-friendly homes under $450k, analyze them against current market trends, and write a personalized report.",
     "Compare Buckhead vs Midtown investment potential using market data and our listings.",
     "Build an investment report for properties with a pool and email it.",
+  ],
+  promptCards: [
+    {
+      title: "Atlanta market brief",
+      detail: "Research, analyze top listings, write and email a client report.",
+      prompt:
+        "Research the Atlanta real estate market, analyze the top 5 properties from our database, write a professional report, and email it to the client.",
+    },
+    {
+      title: "Family homes under $450k",
+      detail: "Match preferences to listings and return a personalized brief.",
+      prompt:
+        "Find family-friendly homes under $450k, analyze them against current market trends, and write a personalized report.",
+    },
+    {
+      title: "Buckhead vs Midtown",
+      detail: "Compare investment potential with market data and listings.",
+      prompt:
+        "Compare Buckhead vs Midtown investment potential using market data and our listings.",
+    },
+    {
+      title: "Pool property report",
+      detail: "Build an investment brief for pool listings and email it.",
+      prompt: "Build an investment report for properties with a pool and email it.",
+    },
   ],
   theme: {
     pageBackground:
@@ -179,8 +204,8 @@ export const multiAgentAssistant: AssistantConfig = {
 };
 
 export const assistants = [
+  multiAgentAssistant,
   webSearchAssistant,
   realEstateAssistant,
   weatherAssistant,
-  multiAgentAssistant,
 ] as const;

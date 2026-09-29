@@ -21,6 +21,11 @@ type ChatMessageListProps = {
   quickPrompts: string[];
   onPromptSelect: (prompt: string) => void;
   renderToolEvents?: (events: ChatMessage["toolEvents"]) => ReactNode;
+  renderAssistantContent?: (args: {
+    content: string;
+    isStreaming: boolean;
+    message: ChatMessage;
+  }) => ReactNode;
 };
 
 function MessageSkeleton() {
@@ -41,6 +46,7 @@ export function ChatMessageList({
   quickPrompts,
   onPromptSelect,
   renderToolEvents,
+  renderAssistantContent,
 }: ChatMessageListProps) {
   if (messages.length === 0) {
     return (
@@ -76,6 +82,7 @@ export function ChatMessageList({
           !isUser && isStreaming && index === messages.length - 1;
         const hasToolEvents = Boolean(message.toolEvents?.length);
         const hasContent = Boolean(message.content || isLastAssistantStreaming);
+        const useReportLayout = !isUser && Boolean(renderAssistantContent);
 
         return (
           <div
@@ -84,10 +91,14 @@ export function ChatMessageList({
           >
             <div
               className={[
-                "max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-7 shadow-lg sm:max-w-[78%]",
+                useReportLayout
+                  ? "w-full max-w-full space-y-3"
+                  : "max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-7 shadow-lg sm:max-w-[78%]",
                 isUser
-                  ? `rounded-br-md ${theme.userBubble}`
-                  : `rounded-bl-md ${theme.assistantBubble}`,
+                  ? `rounded-2xl rounded-br-md px-4 py-3 text-sm leading-7 shadow-lg ${theme.userBubble}`
+                  : useReportLayout
+                    ? ""
+                    : `rounded-bl-md ${theme.assistantBubble}`,
               ].join(" ")}
             >
               {!isUser && hasToolEvents && renderToolEvents
@@ -95,10 +106,18 @@ export function ChatMessageList({
                 : null}
 
               {hasContent ? (
-                <p className="whitespace-pre-wrap">
-                  {message.content}
-                  {isLastAssistantStreaming ? <TypingDots /> : null}
-                </p>
+                useReportLayout && renderAssistantContent ? (
+                  renderAssistantContent({
+                    content: message.content,
+                    isStreaming: isLastAssistantStreaming,
+                    message,
+                  })
+                ) : (
+                  <p className="whitespace-pre-wrap">
+                    {message.content}
+                    {isLastAssistantStreaming ? <TypingDots /> : null}
+                  </p>
+                )
               ) : !hasToolEvents ? (
                 <MessageSkeleton />
               ) : null}
@@ -120,6 +139,8 @@ type ChatInputProps = {
   theme: AssistantConfig["theme"];
   quickPrompts: string[];
   showQuickPrompts: boolean;
+  inputRows?: number;
+  composerClassName?: string;
   onInputChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -137,12 +158,16 @@ export function ChatInput({
   theme,
   quickPrompts,
   showQuickPrompts,
+  inputRows = 2,
+  composerClassName,
   onInputChange,
   onSubmit,
   onKeyDown,
   onPromptFill,
   onStop,
 }: ChatInputProps) {
+  const minHeight = inputRows >= 3 ? "min-h-[96px]" : "min-h-[56px]";
+
   return (
     <section className="space-y-3 border-t border-white/10 pt-4">
       {showQuickPrompts ? (
@@ -161,34 +186,48 @@ export function ChatInput({
         </div>
       ) : null}
 
-      <form onSubmit={onSubmit} className="flex items-end gap-3">
+      <form
+        onSubmit={onSubmit}
+        className={
+          composerClassName ??
+          "flex flex-col gap-3 sm:flex-row sm:items-end"
+        }
+      >
         <textarea
           value={input}
           onChange={(event) => onInputChange(event.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
           disabled={isStreaming}
-          rows={2}
-          className={`max-h-40 min-h-[56px] flex-1 resize-y rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-60 ${theme.inputFocus}`}
+          rows={inputRows}
+          aria-label="Message"
+          className={`max-h-48 w-full flex-1 resize-y rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm leading-6 text-zinc-100 outline-none transition placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-60 ${minHeight} ${theme.inputFocus}`}
         />
         {isStreaming ? (
           <button
             type="button"
             onClick={onStop}
-            className="inline-flex h-14 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 px-6 text-sm font-semibold text-rose-200 shadow-lg transition hover:-translate-y-0.5 hover:bg-rose-500/25"
+            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/15 px-6 text-sm font-semibold text-rose-200 shadow-lg transition hover:-translate-y-0.5 hover:bg-rose-500/25 sm:h-14"
           >
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-400" />
+            </span>
             {stopLabel}
           </button>
         ) : (
           <button
             type="submit"
             disabled={!input.trim()}
-            className={`inline-flex h-14 items-center justify-center rounded-2xl bg-linear-to-r px-6 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 ${theme.accentGradient} ${theme.accentShadow}`}
+            className={`inline-flex h-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-r px-6 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 sm:h-14 ${theme.accentGradient} ${theme.accentShadow}`}
           >
             {submitLabel}
           </button>
         )}
       </form>
+      {isStreaming ? (
+        <p className={`text-xs ${theme.accentText}`}>{streamingLabel}</p>
+      ) : null}
     </section>
   );
 }
@@ -206,7 +245,18 @@ type ChatShellProps = {
   onPromptSelect: (prompt: string) => void;
   onStop: () => void;
   beforeMessages?: ReactNode;
+  renderEmptyState?: (onPromptSelect: (prompt: string) => void) => ReactNode;
   renderToolEvents?: (events: ChatMessage["toolEvents"]) => ReactNode;
+  renderAssistantContent?: (args: {
+    content: string;
+    isStreaming: boolean;
+    message: ChatMessage;
+  }) => ReactNode;
+  showReliabilityNotes?: boolean;
+  /** Defaults to true when the conversation already has messages. */
+  showQuickPromptChips?: boolean;
+  inputRows?: number;
+  shellMaxWidthClassName?: string;
 };
 
 export function ChatShell({
@@ -222,7 +272,13 @@ export function ChatShell({
   onPromptSelect,
   onStop,
   beforeMessages,
+  renderEmptyState,
   renderToolEvents,
+  renderAssistantContent,
+  showReliabilityNotes = true,
+  showQuickPromptChips,
+  inputRows,
+  shellMaxWidthClassName = "max-w-6xl",
 }: ChatShellProps) {
   const router = useRouter();
   const { theme } = config;
@@ -262,10 +318,12 @@ export function ChatShell({
     onPromptSelect(prompt);
   }
 
+  const isEmpty = messages.length === 0;
+
   return (
     <div className={`min-h-screen px-4 py-6 sm:px-6 lg:px-8 ${theme.pageBackground}`}>
       <div
-        className={`mx-auto flex h-[calc(100vh-3rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] border bg-zinc-950/70 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl ${theme.shellBorder}`}
+        className={`mx-auto flex h-[calc(100vh-3rem)] w-full flex-col overflow-hidden rounded-[28px] border bg-zinc-950/70 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl ${shellMaxWidthClassName} ${theme.shellBorder}`}
       >
         <header className={`px-5 py-5 sm:px-6 ${theme.headerBackground}`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -283,7 +341,7 @@ export function ChatShell({
             <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end lg:max-w-[min(100%,34rem)]">
               <UserMenu onSignInClick={() => setShowModal(true)} />
               <div className="flex items-center justify-end gap-2">
-                <ReliabilityNotes />
+                {showReliabilityNotes ? <ReliabilityNotes /> : null}
                 <AssistantSwitcher />
               </div>
             </div>
@@ -295,16 +353,21 @@ export function ChatShell({
             <div className="flex-1 space-y-4 overflow-y-auto pr-1">
               <SearchLimitBanner onSignInClick={() => setShowModal(true)} />
               {beforeMessages}
-              <ChatMessageList
-                messages={messages}
-                isStreaming={isStreaming}
-                theme={theme}
-                emptyTitle={`Start with ${config.label}`}
-                emptyDescription={config.description}
-                quickPrompts={config.quickPrompts}
-                onPromptSelect={handlePromptSelectGuarded}
-                renderToolEvents={renderToolEvents}
-              />
+              {isEmpty && renderEmptyState ? (
+                renderEmptyState(handlePromptSelectGuarded)
+              ) : (
+                <ChatMessageList
+                  messages={messages}
+                  isStreaming={isStreaming}
+                  theme={theme}
+                  emptyTitle={`Start with ${config.label}`}
+                  emptyDescription={config.description}
+                  quickPrompts={config.quickPrompts}
+                  onPromptSelect={handlePromptSelectGuarded}
+                  renderToolEvents={renderToolEvents}
+                  renderAssistantContent={renderAssistantContent}
+                />
+              )}
               <div ref={bottomRef} />
             </div>
 
@@ -317,7 +380,8 @@ export function ChatShell({
               stopLabel="Stop"
               theme={theme}
               quickPrompts={config.quickPrompts}
-              showQuickPrompts={messages.length > 0}
+              showQuickPrompts={showQuickPromptChips ?? !isEmpty}
+              inputRows={inputRows}
               onInputChange={onInputChange}
               onSubmit={handleSubmitGuarded}
               onKeyDown={handleKeyDownGuarded}
@@ -325,7 +389,7 @@ export function ChatShell({
               onStop={onStop}
             />
 
-            {error ? <p className="text-xs text-rose-400">{error}</p> : null}
+            {error ? <p className="mt-2 text-xs text-rose-400">{error}</p> : null}
           </main>
         </ErrorBoundary>
       </div>

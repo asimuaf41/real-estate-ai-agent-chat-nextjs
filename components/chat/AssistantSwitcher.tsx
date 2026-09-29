@@ -47,6 +47,27 @@ const icons: Record<string, ReactNode> = {
   ),
 };
 
+const activeStyles: Record<string, string> = {
+  "web-search":
+    "bg-amber-500/15 text-amber-100 ring-1 ring-amber-400/40 shadow-[0_0_0_1px_rgba(245,158,11,0.08)]",
+  "real-estate":
+    "bg-cyan-500/15 text-cyan-100 ring-1 ring-cyan-400/40 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]",
+  weather:
+    "bg-violet-500/15 text-violet-100 ring-1 ring-violet-400/40 shadow-[0_0_0_1px_rgba(167,139,250,0.08)]",
+  "multi-agent":
+    "bg-emerald-500/15 text-emerald-100 ring-1 ring-emerald-400/40 shadow-[0_0_0_1px_rgba(52,211,153,0.08)]",
+};
+
+function isAssistantActive(assistantId: string, path: string, pathname: string) {
+  if (assistantId === "multi-agent") {
+    return pathname === "/" || pathname.startsWith("/multi-agent");
+  }
+  if (assistantId === "web-search") {
+    return pathname.startsWith("/web-search");
+  }
+  return pathname.startsWith(path);
+}
+
 export function AssistantSwitcher() {
   const pathname = usePathname();
 
@@ -56,19 +77,21 @@ export function AssistantSwitcher() {
       aria-label="Switch assistant"
     >
       {assistants.map((assistant) => {
-        const isActive =
-          assistant.path === "/"
-            ? pathname === "/"
-            : pathname.startsWith(assistant.path);
+        const isActive = isAssistantActive(
+          assistant.id,
+          assistant.path,
+          pathname,
+        );
 
         return (
           <Link
             key={assistant.id}
             href={assistant.path}
             className={[
-              "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-2.5 py-1.5 text-[11px] font-medium transition sm:text-xs",
+              "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-2.5 py-1.5 text-[11px] font-medium transition duration-200 sm:text-xs",
               isActive
-                ? "bg-white/10 text-white shadow-inner ring-1 ring-white/15"
+                ? activeStyles[assistant.id] ??
+                  "bg-white/10 text-white ring-1 ring-white/20"
                 : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
             ].join(" ")}
             aria-current={isActive ? "page" : undefined}

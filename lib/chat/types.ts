@@ -43,6 +43,12 @@ export type AssistantTheme = {
   inputFocus: string;
 };
 
+export type PromptCard = {
+  title: string;
+  detail: string;
+  prompt: string;
+};
+
 export type AssistantConfig = {
   id: string;
   path: string;
@@ -56,6 +62,8 @@ export type AssistantConfig = {
   apiUrl: string;
   requestMode: RequestMode;
   quickPrompts: string[];
+  /** Optional rich prompt cards (used by multi-agent empty state). */
+  promptCards?: PromptCard[];
   theme: AssistantTheme;
   supportsTools: boolean;
   errorMessage: string;
